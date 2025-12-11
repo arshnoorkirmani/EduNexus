@@ -18,13 +18,18 @@ import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/custom/utils/theme-toggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AppData } from "@/config/appConfig";
+import { useSession } from "next-auth/react";
 
 // Navigation links
 const details = AppData.header.landing;
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
-
+  // ================================
+  const { data: session } = useSession();
+  const userType = session?.user?.role;
+  console.log("User Type:", `${userType}/dashboard`);
+  // =================================
   // Add scroll listener
   useEffect(() => {
     const handleScroll = () => {
@@ -55,10 +60,16 @@ export default function Navbar() {
               {details.links.map((link, i) => (
                 <NavigationMenuItem key={i}>
                   <NavigationMenuLink
-                    href={link.href}
+                    href={
+                      link.title == "Home" && userType
+                        ? `${userType}/dashboard`
+                        : link.href
+                    }
                     className="font-medium text-muted-foreground hover:text-primary transition-colors"
                   >
-                    {link.title}
+                    {link.title == "Home" && userType
+                      ? "Dashboard"
+                      : link.title}
                   </NavigationMenuLink>
                 </NavigationMenuItem>
               ))}
@@ -85,6 +96,9 @@ export default function Navbar() {
 
 /* ======================= Mobile Menu ======================= */
 function MobileMenu() {
+  const { data: session } = useSession();
+  const userType = session?.user?.role;
+  console.log("User Type:", `${userType}/dashboard`);
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -120,7 +134,11 @@ function MobileMenu() {
             {details.links.map((link, i) => (
               <NavigationMenuItem key={i} className="w-full">
                 <NavigationMenuLink
-                  href={link.href}
+                  href={
+                    link.title == "Home" && userType
+                      ? `${userType}/dashboard`
+                      : link.href
+                  }
                   className="block w-full py-2 px-2 rounded-md hover:bg-muted text-sm font-medium transition-colors"
                 >
                   {link.title}

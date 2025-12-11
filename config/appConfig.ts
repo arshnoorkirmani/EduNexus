@@ -114,4 +114,11 @@ export const AppData = {
       },
     },
   },
+  default: {
+    institute: {
+      logo: "https://cdn-icons-png.flaticon.com/512/3177/3177440.png",
+      profile_url:
+        "https://fra.cloud.appwrite.io/v1/storage/buckets/67d2bdba0038ff3295fa/files/68f7822e00337f611ca1/view?project=67d2bc76002d39d36196",
+    },
+  },
 } as const;

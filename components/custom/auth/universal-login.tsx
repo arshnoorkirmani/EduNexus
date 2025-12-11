@@ -102,7 +102,7 @@ export default function UniversalLogin({ userType }: UniversalLoginProps) {
         });
         if (!success) return;
         // Redirect to institute dashboard
-        route.push(AppData.routes.frontend.dashboard.institute);
+        // route.push(AppData.routes.frontend.dashboard.institute);
       }
     } catch (error) {
       errorToast("Something went wrong. Please try again.");

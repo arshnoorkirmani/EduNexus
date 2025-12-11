@@ -1,64 +1,101 @@
-import { Institute } from "@/types/models/institute.model";
 import { Schema, model, models, Model } from "mongoose";
+import { Institute } from "@/types/models/institute.model";
 
 const InstituteSchema = new Schema<Institute>(
   {
+    // -----------------------------
+    // INSTITUTE INFORMATION
+    // -----------------------------
     information: {
+      institute_name: { type: String, required: true },
+      short_name: { type: String, default: null },
+      institute_code: { type: String, default: null },
+
       address: { type: String, default: null },
       city: { type: String, default: null },
       state: { type: String, default: null },
       pincode: { type: String, default: null },
       country: { type: String, default: null },
+
       mobile: { type: String, default: null },
       email: { type: String, default: null },
       website: { type: String, default: null },
-      short_name: { type: String, default: null },
-      institute_name: { type: String, required: true },
-      institute_code: { type: String, default: null },
+
       currency: { type: String, default: "INR" },
       timezone: { type: String, default: "Asia/Kolkata" },
       working_hours: { type: String, default: "9AM - 5PM" },
+
       institute_type: { type: String, default: null },
       affiliation: { type: String, default: null },
-      established_year: { type: Number, default: new Date().getFullYear() },
+
+      established_year: {
+        type: Number,
+        default: () => new Date().getFullYear(),
+      },
+
       logo: { type: String, default: null },
       profile_url: { type: String, default: null },
     },
 
+    // -----------------------------
+    // AUTH ACCOUNT (PRIMARY LOGIN)
+    // -----------------------------
     username: { type: String, required: true, trim: true },
     email: { type: String, required: true, lowercase: true },
     password: { type: String, required: true },
+
     user_type: { type: String, default: "institute", required: true },
 
+    // -----------------------------
+    // VERIFICATION
+    // -----------------------------
     isVerified: { type: Boolean, default: false },
     verifyCode: String,
     verifyCodeExpiry: Date,
+
+    // Password reset
     forgotPasswordCode: Number,
     forgotPasswordCodeExpiry: Date,
     forgotPasswordRequest: { type: Boolean, default: false },
 
-    rules: {
-      all_permissions: { type: Boolean, default: true },
-      profile_edit: { type: Boolean, default: true },
-      send_message: { type: Boolean, default: true },
-      inbox_message: { type: Boolean, default: true },
-      website_setting: { type: Boolean, default: true },
-      add_teacher: { type: Boolean, default: true },
-      edit_teacher: { type: Boolean, default: true },
-      delete_teacher: { type: Boolean, default: true },
-      salary_management: { type: Boolean, default: true },
-      add_student: { type: Boolean, default: true },
-      edit_student: { type: Boolean, default: true },
-      delete_student: { type: Boolean, default: true },
-      fees_management: { type: Boolean, default: true },
-      result_permission: { type: Boolean, default: true },
+    // -----------------------------
+    // PERMISSIONS (ADMIN-LEVEL)
+    // -----------------------------
+    permissions: {
+      all: { type: Boolean, default: true },
+
+      profileEdit: { type: Boolean, default: true },
+      sendMessage: { type: Boolean, default: true },
+      inboxMessage: { type: Boolean, default: true },
+
+      websiteSetting: { type: Boolean, default: true },
+
+      // Teacher Management
+      addTeacher: { type: Boolean, default: true },
+      editTeacher: { type: Boolean, default: true },
+      deleteTeacher: { type: Boolean, default: true },
+
+      // Student Management
+      addStudent: { type: Boolean, default: true },
+      editStudent: { type: Boolean, default: true },
+      deleteStudent: { type: Boolean, default: true },
+
+      // Finance & Results
+      salaryManagement: { type: Boolean, default: true },
+      feesManagement: { type: Boolean, default: true },
+      resultPermission: { type: Boolean, default: true },
+
       attendance: { type: Boolean, default: true },
-      manage_users: { type: Boolean, default: true },
+      manageUsers: { type: Boolean, default: true },
       settings: { type: Boolean, default: true },
-      show_student: { type: Boolean, default: true },
-      show_teacher: { type: Boolean, default: true },
+
+      showStudent: { type: Boolean, default: true },
+      showTeacher: { type: Boolean, default: true },
     },
 
+    // -----------------------------
+    // SYSTEM FIELDS
+    // -----------------------------
     lastLogin: { type: Date, default: null },
 
     status: {
@@ -66,11 +103,17 @@ const InstituteSchema = new Schema<Institute>(
       enum: ["active", "inactive", "blocked", "pending"],
       default: "active",
     },
+    isOnboarded: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
 
-// indexes
+//
+// INDEXES
+//
 InstituteSchema.index({ email: 1 }, { unique: true });
 InstituteSchema.index({ "information.email": 1 }, { sparse: true });
 InstituteSchema.index(

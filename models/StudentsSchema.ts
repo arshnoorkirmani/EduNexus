@@ -1,16 +1,30 @@
+import { Student } from "@/types/models/student.model";
 import { Schema, model, models } from "mongoose";
-
-const StudentSchema = new Schema(
+const StudentSchema = new Schema<Student>(
   {
-    institute_id: {
-      type: Schema.Types.ObjectId,
-      ref: "Institute",
-      required: true,
+    auth: {
+      studentId: { type: String, required: true, unique: true },
+      password: { type: String, required: true },
+      userType: { type: String, default: "student" },
+      verify: {
+        isVerify: { type: Boolean, default: false },
+        isActive: { type: Boolean, default: true },
+      },
+      lastLogin: { type: Date, default: null },
+    },
+
+    institute: {
+      instituteId: {
+        type: Schema.Types.ObjectId,
+        ref: "Institute",
+        required: true,
+      },
+      instituteCode: { type: String, required: true },
     },
 
     personal: {
-      first_name: { type: String, required: true },
-      last_name: { type: String, default: "" },
+      firstName: { type: String, required: true },
+      lastName: { type: String, default: "" },
       gender: {
         type: String,
         enum: ["male", "female", "other"],
@@ -19,29 +33,61 @@ const StudentSchema = new Schema(
       dob: { type: Date, required: true },
       mobile: { type: String, required: true },
       email: { type: String, default: null },
-      address: { type: String, default: null },
-      city: { type: String, default: null },
-      state: { type: String, default: null },
-      pincode: { type: String, default: null },
-    },
-
-    academic: {
-      roll_no: { type: String, required: true },
-      class_name: { type: String, required: true },
-      section: { type: String, default: null },
-      admission_date: { type: Date, required: true },
-      previous_school: { type: String, default: null },
-      course: {
-        group_title: String,
-        course_title: String,
-        base_fee: Number,
+      fatherName: { type: String, default: null },
+      address: {
+        line: { type: String, default: null },
+        city: { type: String, default: null },
+        state: { type: String, default: null },
+        pincode: { type: String, default: null },
+        country: { type: String, default: null },
       },
     },
 
+    academic: {
+      rollNo: { type: String, required: true },
+      className: { type: String, required: true },
+      section: { type: String, default: null },
+      courseName: { type: String, required: true },
+      admissionDate: { type: Date, required: true, default: Date.now },
+      previousSchool: { type: String, default: null },
+      course: {
+        groupTitle: String,
+        courseTitle: String,
+        baseFee: Number,
+      },
+    },
+
+    permissions: {
+      all: { type: Boolean, default: false },
+      profileEdit: { type: Boolean, default: true },
+      sendMessage: { type: Boolean, default: true },
+      inboxMessage: { type: Boolean, default: true },
+      viewFees: { type: Boolean, default: true },
+      downloadDocuments: { type: Boolean, default: true },
+      viewResults: { type: Boolean, default: true },
+      attendanceView: { type: Boolean, default: true },
+      assignmentsView: { type: Boolean, default: true },
+      timetableView: { type: Boolean, default: true },
+    },
+
     documents: {
-      profile_photo: { type: String, default: null },
+      profilePhoto: { type: String, default: null },
       aadhaar: { type: String, default: null },
-      birth_certificate: { type: String, default: null },
+      birthCertificate: { type: String, default: null },
+    },
+
+    fees: {
+      totalFees: { type: Number, default: 0 },
+      status: { type: String, default: "paid" },
+      paidFees: { type: Number, default: 0 },
+      remainingFees: { type: Number, default: 0 },
+      detail: [
+        {
+          date: { type: Date, default: Date.now },
+          amount: { type: Number, required: true },
+          method: { type: String, default: "cash" },
+        },
+      ],
     },
 
     status: {
@@ -52,13 +98,16 @@ const StudentSchema = new Schema(
 
     lastUpdatedBy: { type: Schema.Types.ObjectId, ref: "Teacher" },
   },
+
   { timestamps: true }
 );
 
-StudentSchema.index({ institute_id: 1 });
+// Indexing for performance
+StudentSchema.index({ "institute.instituteId": 1 });
 StudentSchema.index(
-  { "academic.roll_no": 1, institute_id: 1 },
+  { "academic.rollNo": 1, "institute.instituteId": 1 },
   { unique: true }
 );
 
-export const StudentModel = models.Student ?? model("Student", StudentSchema);
+export const StudentModel =
+  models.Student || model<Student>("Student", StudentSchema);
