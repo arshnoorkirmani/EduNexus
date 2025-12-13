@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   SidebarFooter,
   SidebarMenu,
@@ -18,66 +18,68 @@ import { ProfileAvatar } from "../utils/ProfileAvtar";
 import { LogoutButton } from "../utils/logOutButton";
 import { RoleBadge } from "../utils/RoleBadge"; // ⭐ NEW IMPORT
 import { AppData } from "@/config/appConfig";
+import { useSession } from "next-auth/react";
+import { UserType } from "@/types/api/helper/next-auth";
+import {
+  PublicBaseUser,
+  PublicInstituteUser,
+  PublicStudentUser,
+  PublicTeacherUser,
+  PublicUser,
+} from "@/types/api/helper/public-user";
+import { Settings } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export interface User {
   id: string;
   name: string;
-  email: string;
+  identifier: string;
   avatar?: string;
-  role?: "Administrator" | "Teacher" | "Student" | "User";
+  role?: UserType;
 }
 
-export const DemoUsers: User[] = [
-  {
-    id: "1",
-    name: "Admin User",
-    email: "admin@institute.com",
-    role: "Administrator",
-    avatar: AppData.default.institute.logo,
-  },
-];
-
 export function SidebarUserFooter() {
+  const { data: session, status } = useSession();
   const [users, setUsers] = useState<User[]>([]);
-  const [activeUser, setActiveUser] = useState<User | null>(null);
 
-  /* ----------------- INITIAL LOAD ----------------- */
+  // ---------------- ACTIVE USER (DERIVED) ----------------
+  const activeUser: User | null = useMemo(() => {
+    if (status !== "authenticated" || !session?.user) return null;
+
+    return {
+      id: session.user.id,
+      name: session.user.name,
+      identifier:
+        session.user.role === "institute" || session.user.role === "user"
+          ? (session.user as PublicInstituteUser | PublicBaseUser).email
+          : session.user.role === "student"
+          ? (session.user as PublicStudentUser).student_id
+          : session.user.role === "teacher"
+          ? (session.user as PublicTeacherUser).teacher_id
+          : "unknown",
+
+      avatar: session.user.profile_url ?? undefined,
+      role: session.user.role,
+    };
+  }, [status, session]);
+  // ---------------- SYNC USERS LIST ----------------
   useEffect(() => {
-    const storedUsers = localStorage.getItem("app_users");
-    const storedActive = localStorage.getItem("active_user");
-
-    if (!storedUsers) {
-      localStorage.setItem("app_users", JSON.stringify(DemoUsers));
-      localStorage.setItem("active_user", JSON.stringify(DemoUsers[0]));
-
-      setUsers(DemoUsers);
-      setActiveUser(DemoUsers[0]);
-      return;
-    }
-
-    const parsedUsers: User[] = JSON.parse(storedUsers);
-    const parsedActive: User = storedActive
-      ? JSON.parse(storedActive)
-      : parsedUsers[0];
-
-    setUsers(parsedUsers);
-    setActiveUser(parsedActive);
-  }, []);
-
-  /* ----------------- SWITCH USER ----------------- */
-  const handleSwitchUser = (u: User) => {
-    setActiveUser(u);
-    localStorage.setItem("active_user", JSON.stringify(u));
-  };
-
-  /* ----------------- LOGOUT ----------------- */
-  const handleLogout = () => {
-    // localStorage.removeItem("active_user");
-    // window.location.href = "/auth/institute-login";
-    console.log("==========Logout=============");
-  };
+    if (!activeUser) return;
+    console.log("activeUser", activeUser, session); //remove
+    setUsers([activeUser]);
+  }, [activeUser]);
 
   if (!activeUser) return null;
+
+  // ---------------- HANDLERS ----------------
+  const handleSwitchUser = (u: User) => {
+    // localStorage.setItem("active_user", JSON.stringify(u));
+    console.log(u); //remove
+  };
+
+  const handleLogout = () => {
+    console.log("==========Logout=============");
+  };
 
   return (
     <SidebarFooter className="border-t backdrop-blur-xl">
@@ -127,8 +129,8 @@ export function SidebarUserFooter() {
                   <span className="text-sm font-semibold text-white">
                     {activeUser.name}
                   </span>
-                  <span className="text-xs text-neutral-400">
-                    {activeUser.email}
+                  <span className="text-[8px] text-neutral-400">
+                    {activeUser.identifier}
                   </span>
                 </div>
 
@@ -207,12 +209,16 @@ export function UserSwitcherList({
                   <span className="text-sm font-semibold text-white">
                     {u.name}
                   </span>
-                  <span className="text-xs text-neutral-400">{u.email}</span>
+                  <span className="text-[10px] text-neutral-400">
+                    {u.identifier}
+                  </span>
                 </div>
               </div>
 
               {/* ⭐ NEW ROLE BADGE */}
-              <RoleBadge role={u.role} size={16} />
+              <Button variant={"ghost"} className="cursor-pointer">
+                <Settings size={16} />
+              </Button>
             </button>
           );
         })}

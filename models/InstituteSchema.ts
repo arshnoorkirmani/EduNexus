@@ -44,7 +44,7 @@ const InstituteSchema = new Schema<Institute>(
     email: { type: String, required: true, lowercase: true },
     password: { type: String, required: true },
 
-    user_type: { type: String, default: "institute", required: true },
+    role: { type: String, default: "institute", required: true },
 
     // -----------------------------
     // VERIFICATION
@@ -62,35 +62,49 @@ const InstituteSchema = new Schema<Institute>(
     // PERMISSIONS (ADMIN-LEVEL)
     // -----------------------------
     permissions: {
-      all: { type: Boolean, default: true },
+      super: { type: Boolean, default: true },
 
-      profileEdit: { type: Boolean, default: true },
-      sendMessage: { type: Boolean, default: true },
-      inboxMessage: { type: Boolean, default: true },
+      profile: {
+        edit: { type: Boolean, default: true },
+      },
 
-      websiteSetting: { type: Boolean, default: true },
+      communication: {
+        send_message: { type: Boolean, default: true },
+        inbox_message: { type: Boolean, default: true },
+      },
 
-      // Teacher Management
-      addTeacher: { type: Boolean, default: true },
-      editTeacher: { type: Boolean, default: true },
-      deleteTeacher: { type: Boolean, default: true },
+      user_management: {
+        show: { type: Boolean, default: true },
+        add: { type: Boolean, default: true },
+        edit: { type: Boolean, default: true },
+        delete: { type: Boolean, default: true },
+      },
 
-      // Student Management
-      addStudent: { type: Boolean, default: true },
-      editStudent: { type: Boolean, default: true },
-      deleteStudent: { type: Boolean, default: true },
+      student_management: {
+        show: { type: Boolean, default: true },
+        add: { type: Boolean, default: true },
+        edit: { type: Boolean, default: true },
+        delete: { type: Boolean, default: true },
+        attendance: { type: Boolean, default: true },
+        result: { type: Boolean, default: true },
+      },
 
-      // Finance & Results
-      salaryManagement: { type: Boolean, default: true },
-      feesManagement: { type: Boolean, default: true },
-      resultPermission: { type: Boolean, default: true },
+      teacher_management: {
+        show: { type: Boolean, default: true },
+        add: { type: Boolean, default: true },
+        edit: { type: Boolean, default: true },
+        delete: { type: Boolean, default: true },
+      },
 
-      attendance: { type: Boolean, default: true },
-      manageUsers: { type: Boolean, default: true },
-      settings: { type: Boolean, default: true },
+      finance: {
+        salary_management: { type: Boolean, default: true },
+        fees_management: { type: Boolean, default: true },
+      },
 
-      showStudent: { type: Boolean, default: true },
-      showTeacher: { type: Boolean, default: true },
+      settings: {
+        settings: { type: Boolean, default: true },
+        website_settings: { type: Boolean, default: true },
+      },
     },
 
     // -----------------------------

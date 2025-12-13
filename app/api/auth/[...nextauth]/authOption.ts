@@ -48,7 +48,7 @@ export const publicUser = (
   if (role === "student") {
     return {
       ...base,
-      user_type: "student",
+      role: "student",
       student_id: (user as Student).auth.studentId,
       logo: null,
     };
@@ -57,7 +57,7 @@ export const publicUser = (
   if (role === "teacher") {
     return {
       ...base,
-      user_type: "teacher",
+      role: "teacher",
       teacher_id: (user as Teacher).auth.teacherId,
       logo: null,
     };
@@ -67,7 +67,7 @@ export const publicUser = (
   return {
     ...base,
     isNew: (user as Institute).isOnboarded,
-    user_type: "institute",
+    role: "institute",
     email: (user as Institute).email,
   };
 };

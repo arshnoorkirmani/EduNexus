@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { EmailSender } from "@/config/EmailSendConfig";
 import { InstituteConf } from "@/config/InstituteClient";
+import mongoose from "mongoose";
 
 const UpdateInstituteSchema = z.object({
   institute_code: z.string().min(1, "Institute code is required"),
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
       existingInstitute.isVerified = false;
 
       await existingInstitute.save().then(() => {
-        console.log("Institute Information are updated.....");
+        console.log("Institute Information are updated....."); //remove
       });
 
       const emailRes = await EmailSender.sendEmail({
@@ -158,13 +159,17 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+} // ============================= GET ==========================================
 
-// ============================= GET ==========================================
-export async function GET(request: Request) {
+// helper to validate ObjectId
+function isValidObjectId(id: string) {
+  return mongoose.Types.ObjectId.isValid(id);
+}
+export async function GET(request: NextRequest) {
   try {
     const url = new URL(request.url);
     const identifier = url.searchParams.get("identifier");
+    const fieldsParam = url.searchParams.get("fieldsParam");
 
     if (!identifier) {
       return NextResponse.json(
@@ -173,11 +178,99 @@ export async function GET(request: Request) {
       );
     }
 
-    await dbConnect("institutes");
+    await dbConnect();
 
-    const institute = await InstituteModel.findOne({
-      $or: [{ email: identifier }, { institute_code: identifier }],
-    }).lean();
+    // -------------------------------------------
+    // SAFE ROOT WHITELIST
+    // -------------------------------------------
+    const safeRootFields = [
+      // BASIC PROFILE FIELDS
+      "username",
+      "email",
+      "isVerified",
+
+      // NESTED SAFE GROUPS
+      "information",
+      "permissions",
+
+      // SYSTEM META (safe)
+      "status",
+      "isOnboarded",
+      "lastLogin",
+      "createdAt",
+      "updatedAt",
+    ];
+
+    // -------------------------------------------
+    // BUILD PROJECTION (STRICT MODE)
+    // -------------------------------------------
+    let projection: Record<string, 1> = {};
+
+    if (fieldsParam) {
+      if (fieldsParam === "all") {
+        safeRootFields.forEach((key) => (projection[key] = 1));
+      } else {
+        const requestedFields = fieldsParam.split(",").map((f) => f.trim());
+
+        for (const field of requestedFields) {
+          const root = field.split(".")[0];
+
+          // ❗ STRICT CHECK: if root not allowed → do NOT return it
+          if (!safeRootFields.includes(root)) {
+            continue;
+          }
+
+          const isNested = field.includes(".");
+
+          if (isNested) {
+            // Remove parent if exists to avoid collision
+            delete projection[root];
+            projection[field] = 1;
+          } else {
+            // Remove nested children if parent requested
+            Object.keys(projection).forEach((key) => {
+              if (key.startsWith(field + ".")) delete projection[key];
+            });
+            projection[field] = 1;
+          }
+        }
+
+        // ❗ STRICT MODE:
+        // If none of the requested fields were allowed → return ONLY _id
+        if (Object.keys(projection).length === 0) {
+          projection = { _id: 1 }; // return empty result except id
+        }
+      }
+    } else {
+      // No fieldsParam → return safe root fields
+      projection = {
+        _id: 1,
+        "information.institute_code": 1,
+        "information.institute_name": 1,
+        "information.email": 1,
+      };
+    }
+
+    // -------------------------------------------
+    // IDENTIFIER QUERY (Supports _id, email, code)
+    // -------------------------------------------
+    let query: any = {
+      $or: [
+        { email: identifier.toLowerCase() },
+        { "information.email": identifier.toLowerCase() },
+        { "information.institute_code": identifier.toUpperCase() },
+      ],
+    };
+
+    if (isValidObjectId(identifier)) {
+      query.$or.push({ _id: new mongoose.Types.ObjectId(identifier) });
+    }
+
+    // -------------------------------------------
+    // FIND ONE
+    // -------------------------------------------
+    const institute = await InstituteModel.findOne(query, projection).lean();
+    console.log({ query: query.$or, projection, institute }); //remove
 
     if (!institute) {
       return NextResponse.json(
@@ -187,7 +280,11 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json(
-      { success: true, message: "Institute found", user: institute },
+      {
+        success: true,
+        message: "Institute found",
+        data: { id: String(institute._id), ...institute },
+      },
       { status: 200 }
     );
   } catch (error: any) {

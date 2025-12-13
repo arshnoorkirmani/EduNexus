@@ -167,7 +167,7 @@ class Institute {
         email: values.email,
         password: values.password,
       });
-      console.log("Login response:", response);
+      console.log("Login response:", response); //remove
 
       // ❌ Invalid credentials → NextAuth sets response.error
       if (response?.error) {
@@ -203,7 +203,7 @@ class Institute {
     email: string
   ): Promise<ApiResponse<any>> {
     const payload = { code, identifier: email };
-    console.log("InstituteConf - request payload:", payload);
+    console.log("InstituteConf - request payload:", payload); //remove
 
     // 1️⃣ Create the request promise (typed correctly)
     const request = apiClient.post<ApiResponse<any>>(
@@ -247,14 +247,14 @@ class Institute {
     };
 
     try {
-      console.log("InstituteConf - resend payload:", payload);
+      console.log("InstituteConf - resend payload:", payload); //remove
 
       const response = await apiClient.post<ApiResponse<any>>(
         "institute/send-code",
         payload
       );
 
-      console.log("InstituteConf - resend response:", response);
+      console.log("InstituteConf - resend response:", response); //remove
 
       if (!response?.success) {
         errorToast(response?.error || "Unable to resend code");
@@ -270,13 +270,58 @@ class Institute {
         }
       );
     } catch (err: any) {
-      console.log("InstituteConf - resend caught error:", err);
+      console.log("InstituteConf - resend caught error:", err); //remove
 
       errorToast(err?.message || "Error resending code");
 
       return {
         success: false,
         error: err?.message || "Error resending code",
+        data: null,
+      };
+    }
+  }
+  /**
+ * ---------------------------------------------------------
+ * Fetch Institute (email | _id | code) + optional fields
+ * ---------------------------------------------------------
+
+ */
+  public async fetchInstitute(
+    identifier: string,
+    fields?: string[]
+  ): Promise<ApiResponse<any>> {
+    try {
+      if (!identifier || typeof identifier !== "string") {
+        return { success: false, error: "Identifier is required", data: null };
+      }
+
+      const params: any = { identifier };
+
+      // Convert fields array → comma string:  "name,email,profile.url"
+      if (fields?.length) {
+        params.fieldsParam = fields.join(",");
+      }
+
+      // ---------------------------------------------------------
+      // API CALL
+      // ---------------------------------------------------------
+      const response = await apiClient.get<ApiResponse<any>>(
+        "institute",
+        params
+      );
+
+      if (!response.success) {
+        errorToast(response.message || "Institute not found");
+      }
+
+      return response;
+    } catch (err: any) {
+      errorToast(err?.message || "Error fetching institute");
+
+      return {
+        success: false,
+        error: err?.message || "Error fetching institute",
         data: null,
       };
     }

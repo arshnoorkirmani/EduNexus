@@ -1,4 +1,57 @@
 import { Document, Mongoose, Schema } from "mongoose";
+export interface InstitutePermissions {
+  super: boolean;
+
+  profile: {
+    show: boolean;
+    edit: boolean;
+  };
+
+  communication: {
+    send_message: boolean;
+    inbox_message: boolean;
+  };
+
+  user_management: {
+    show: boolean;
+    add: boolean;
+    edit: boolean;
+    delete: boolean;
+  };
+
+  student_management: {
+    show: boolean;
+    add: boolean;
+    edit: boolean;
+    delete: boolean;
+    attendance: boolean;
+    result: boolean;
+  };
+
+  teacher_management: {
+    show: boolean;
+    add: boolean;
+    edit: boolean;
+    delete: boolean;
+  };
+
+  academics: {
+    show_courses: boolean;
+    add_courses: boolean;
+    edit_courses: boolean;
+    delete_courses: boolean;
+  };
+
+  finance: {
+    salary_management: boolean;
+    fees_management: boolean;
+  };
+
+  settings: {
+    settings: boolean;
+    website_settings: boolean;
+  };
+}
 
 export interface Institute extends Document {
   _id: Types.ObjectId | string;
@@ -39,7 +92,7 @@ export interface Institute extends Document {
   username: string;
   email: string;
   password: string;
-  user_type: "institute";
+  role: "institute";
 
   // -------------------------------------
   // VERIFICATION & PASSWORD RESET
@@ -55,34 +108,7 @@ export interface Institute extends Document {
   // -------------------------------------
   // PERMISSIONS FOR INSTITUTE ADMIN
   // -------------------------------------
-  permissions: {
-    all: boolean;
-
-    profileEdit: boolean;
-    sendMessage: boolean;
-    inboxMessage: boolean;
-
-    websiteSetting: boolean;
-
-    addTeacher: boolean;
-    editTeacher: boolean;
-    deleteTeacher: boolean;
-
-    addStudent: boolean;
-    editStudent: boolean;
-    deleteStudent: boolean;
-
-    salaryManagement: boolean;
-    feesManagement: boolean;
-    resultPermission: boolean;
-
-    attendance: boolean;
-    manageUsers: boolean;
-    settings: boolean;
-
-    showStudent: boolean;
-    showTeacher: boolean;
-  };
+  permissions: InstitutePermissions;
 
   // -------------------------------------
   // SYSTEM FIELDS

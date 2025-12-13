@@ -8,12 +8,13 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSkeleton,
   SidebarMenuSub,
+  SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -29,213 +30,129 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
-import {
-  LucideHome,
-  User2,
-  UserCircle,
-  UserPlus2Icon,
-  UserPlus,
-  Receipt,
-  Sheet,
-  Book,
-  BookOpen,
-  Settings,
-  Monitor,
-  Inbox,
-  LogOut,
-  Users2,
-  Shield,
-  GraduationCap,
-  UserCheck,
-} from "lucide-react";
+import { Users2, Shield, GraduationCap, UserCheck } from "lucide-react";
 
 import { SidebarUserFooter } from "./sidebaruserfooter";
 import { ProfileAvatar } from "../utils/ProfileAvtar";
 import { AppData } from "@/config/appConfig";
-// ----------------------------------------------------------
-// MENU CONFIG
-// ----------------------------------------------------------
-
-export const MENU = [
-  {
-    id: "dashboard",
-    label: "Dashboard",
-    icon: LucideHome,
-    items: [
-      {
-        id: "overview",
-        title: "Overview",
-        url: "/institute/dashboard",
-        icon: LucideHome,
-      },
-      {
-        id: "inbox",
-        title: "Inbox / Messages",
-        url: "/institute/inbox",
-        icon: Inbox,
-      },
-      {
-        id: "profile",
-        title: "My Profile",
-        url: "/institute/profile",
-        icon: User2,
-      },
-    ],
-  },
-
-  {
-    id: "user_management",
-    label: "User Management",
-    icon: UserCircle,
-    items: [
-      {
-        id: "users",
-        title: "All Users",
-        url: "/institute/manage-users",
-        icon: UserCircle,
-      },
-      {
-        id: "add_user",
-        title: "Add User",
-        url: "/institute/add-user",
-        icon: UserPlus2Icon,
-      },
-    ],
-  },
-
-  {
-    id: "student_management",
-    label: "Student Management",
-    icon: Book,
-    items: [
-      {
-        id: "students",
-        title: "Student List",
-        url: "/institute/students",
-        icon: User2,
-      },
-      {
-        id: "add_student",
-        title: "Add Student",
-        url: "/institute/new-student",
-        icon: UserPlus2Icon,
-      },
-      {
-        id: "attendance",
-        title: "Attendance",
-        url: "/institute/attendance",
-        icon: Book,
-      },
-      {
-        id: "results",
-        title: "Results",
-        url: "/institute/results",
-        icon: Sheet,
-      },
-    ],
-  },
-
-  {
-    id: "teacher_management",
-    label: "Teacher Management",
-    icon: UserCircle,
-    items: [
-      {
-        id: "teacher_list",
-        title: "Teacher List",
-        url: "/institute/teachers",
-        icon: UserCircle,
-      },
-      {
-        id: "add_teacher",
-        title: "Add Teacher",
-        url: "/institute/new-teacher",
-        icon: UserPlus,
-      },
-    ],
-  },
-
-  {
-    id: "academics",
-    label: "Academics",
-    icon: BookOpen,
-    items: [
-      {
-        id: "courses",
-        title: "Courses",
-        url: "/institute/courses",
-        icon: BookOpen,
-      },
-    ],
-  },
-
-  {
-    id: "finance",
-    label: "Finance",
-    icon: Receipt,
-    items: [
-      {
-        id: "fees",
-        title: "Fees Management",
-        url: "/institute/fees-management",
-        icon: Receipt,
-      },
-      {
-        id: "salary",
-        title: "Salary Management",
-        url: "/institute/salary-management",
-        icon: Receipt,
-      },
-    ],
-  },
-
-  {
-    id: "settings",
-    label: "Settings",
-    icon: Settings,
-    items: [
-      {
-        id: "institute_settings",
-        title: "Institute Settings",
-        url: "/institute/settings",
-        icon: Settings,
-      },
-      {
-        id: "website_settings",
-        title: "Website Settings",
-        url: "/institute/website-settings",
-        icon: Monitor,
-      },
-    ],
-  },
-];
-
-// ----------------------------------------------------------
-// PROFILE DATA
-// ----------------------------------------------------------
-const PROFILE = {
-  name: "Institute Admin",
-  avatar: AppData.default.institute.logo,
-  email: "admin@institute.com",
-  role: "Administrator", // corrected: must match icon keys
-};
-
-export const roleIcons: Record<string, any> = {
-  Administrator: Shield,
-  Teacher: GraduationCap,
-  Student: UserCheck,
-  User: Users2,
-};
-
+import { can, MENUS } from "./menus";
+import { useAppSelector } from "@/store";
+import { Skeleton } from "@/components/ui/skeleton";
+import { LogoutButton } from "../utils/logOutButton";
+import { errorToast } from "../utils/Toast";
+import { useEffect, useMemo } from "react";
+import { roleIcons } from "../utils/RoleBadge";
 // ----------------------------------------------------------
 // COMPONENT
 // ----------------------------------------------------------
 
 export default function ReadySidebar() {
   const pathname = usePathname();
+  // const menus = MENUS["institute"];
+  const institute = useAppSelector((state) => state.institute);
+  const roleKey =
+    institute.status === "active"
+      ? "verified"
+      : institute.status || institute.role || "user";
 
+  const PROFILE = useMemo(() => {
+    if (institute.loading || institute.error) {
+      return {
+        name: "User",
+        avatar: AppData.default.institute.logo,
+        email: "user@institute.com",
+        role: "user",
+      };
+    }
+
+    return {
+      name: institute.username ?? `${AppData.app.name} User`,
+      avatar:
+        institute.information?.profile_url || AppData.default.institute.logo,
+      email: institute.information?.email ?? "",
+      role: institute.role ?? "user",
+    };
+  }, [institute]);
+
+  console.log({ institute }); //remove
+  useEffect(() => {
+    if (!institute.status) return;
+
+    const messages = {
+      pending: "Institute verification is pending",
+      inactive: "Institute account is inactive",
+      blocked: "Institute has been blocked by admin",
+    };
+
+    if (institute.status !== "active" && messages[institute.status]) {
+      errorToast(messages[institute.status]);
+    }
+  }, [institute.status]);
+
+  // ==============================================
+  const menus = useMemo(() => {
+    return MENUS.institute
+      .map((section) => ({
+        ...section,
+        items: section.items.filter((item) =>
+          can(institute.permissions, item.id)
+        ),
+      }))
+      .filter((section) => section.items.length > 0);
+  }, [institute.permissions]);
+
+  // console.log("filteredMenus", filteredMenus);
+  // ==============================================
+  if (institute.loading) {
+    return (
+      <Sidebar side="left" variant="floating" id="sidebar-skeleton">
+        <SidebarHeader className="">
+          <div className="size-full flex justify-center items-center flex-col gap-2">
+            <Skeleton className="size-14 rounded-full" />
+            <Skeleton className="h-6 w-32" />
+          </div>
+        </SidebarHeader>
+        <SidebarContent>
+          {" "}
+          <SidebarGroup>
+            <SidebarMenuSkeleton />
+            <SidebarMenuSub>
+              <SidebarMenuSubItem>
+                <SidebarMenuSkeleton showIcon />
+                <SidebarMenuSkeleton showIcon />
+                <SidebarMenuSkeleton showIcon />
+              </SidebarMenuSubItem>
+            </SidebarMenuSub>
+          </SidebarGroup>
+          <SidebarGroup>
+            <SidebarMenuSkeleton />
+            <SidebarMenuSub>
+              <SidebarMenuSubItem>
+                <SidebarMenuSkeleton showIcon />
+                <SidebarMenuSkeleton showIcon />
+              </SidebarMenuSubItem>
+            </SidebarMenuSub>
+          </SidebarGroup>
+          <SidebarGroup>
+            <SidebarMenuSkeleton />
+            <SidebarMenuSub>
+              <SidebarMenuSubItem>
+                <SidebarMenuSkeleton showIcon />
+                <SidebarMenuSkeleton showIcon />
+              </SidebarMenuSubItem>
+            </SidebarMenuSub>
+          </SidebarGroup>
+        </SidebarContent>
+        <SidebarFooter className="border-t">
+          <SidebarMenu>
+            <SidebarMenuItem className="flex  gap-2 justify-between">
+              <Skeleton className="size-10 rounded-full" />
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
+      </Sidebar>
+    );
+  }
   return (
     <Sidebar
       side="left"
@@ -247,7 +164,7 @@ export default function ReadySidebar() {
         <ProfileAvatar
           name={PROFILE.name}
           profileUrl={PROFILE.avatar}
-          icon={roleIcons[PROFILE.role]}
+          icon={roleIcons[roleKey]}
           size="lg" // open sidebar
           collapsed="md" // collapsed sidebar
         />
@@ -263,7 +180,7 @@ export default function ReadySidebar() {
       {/* CONTENT */}
       <SidebarContent className="flex-1 py-4 overflow-hidden">
         <ScrollArea className="h-full">
-          {MENU.map((group) => (
+          {menus.map((group) => (
             <SidebarGroup key={group.label} className="relative group">
               {/* Expanded mode label */}
               <div className="flex items-center gap-2 mb-2 group-data-[collapsible=icon]:hidden">
