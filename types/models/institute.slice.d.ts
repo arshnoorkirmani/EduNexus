@@ -1,5 +1,10 @@
 // ==========================================================
 // INSTITUTE INFORMATION
+
+import { Student } from "./student.model";
+import { Teacher } from "./teacher.model";
+import { User } from "./user.model";
+
 // ==========================================================
 export interface InstituteInformation {
   institute_name: string | null;
@@ -58,7 +63,7 @@ export interface DashboardState {
 // USER MANAGEMENT
 // ==========================================================
 export interface UserManagementState {
-  list: any[];
+  list: User[];
   selectedUser: any | null;
   filters: {
     role: string | null;
@@ -73,7 +78,7 @@ export interface UserManagementState {
 // STUDENT MODULE
 // ==========================================================
 export interface StudentModuleState {
-  list: any[];
+  list: Student[];
   selectedStudent: any | null;
   attendance: any[];
   results: any[];
@@ -90,7 +95,7 @@ export interface StudentModuleState {
 // TEACHER MODULE
 // ==========================================================
 export interface TeacherModuleState {
-  list: any[];
+  list: Teacher[];
   selectedTeacher: any | null;
   salaryHistory: any[];
   filters: {
