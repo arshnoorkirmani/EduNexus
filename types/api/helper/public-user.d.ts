@@ -1,6 +1,6 @@
 export interface PublicInstituteUser {
   id: string;
-  user_type: "institute";
+  role: "institute";
   name: string;
   profile_url: string | null;
   logo: string | null;
@@ -11,10 +11,10 @@ export interface PublicInstituteUser {
 
 export interface PublicStudentUser {
   id: string;
-  user_type: "student";
+  role: "student";
   name: string;
   profile_url: string | null;
-  logo: null;
+  logo: string | null;
   isVerified: boolean;
   isNew: boolean;
   student_id: string;
@@ -22,10 +22,10 @@ export interface PublicStudentUser {
 
 export interface PublicTeacherUser {
   id: string;
-  user_type: "teacher";
+  role: "teacher";
   name: string;
   profile_url: string | null;
-  logo: null;
+  logo: string | null;
   isVerified: boolean;
   isNew: boolean;
   teacher_id: string;
@@ -33,10 +33,10 @@ export interface PublicTeacherUser {
 
 export interface PublicBaseUser {
   id: string;
-  user_type: "user";
+  role: "user";
   name: string;
   profile_url: string | null;
-  logo: null;
+  logo: string | null;
   isVerified: boolean;
   isNew: boolean;
   email: string;

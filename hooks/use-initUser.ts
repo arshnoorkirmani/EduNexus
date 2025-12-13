@@ -1,33 +1,30 @@
 "use client";
 
 import { useEffect } from "react";
-import { useDispatch } from "react-redux";
 import { useAuth } from "@/hooks/useAuth";
-
-// import { setUser } from "@/store/slices/userSlice";
-// import { setStudent } from "@/store/slices/studentSlice";
-// import { setTeacher } from "@/store/slices/teacherSlice";
-// import { setInstitute } from "@/store/slices/instituteSlice";
+import { useAppDispatch } from "@/store";
+import { fetchInstitute } from "@/store/thunks/institute.thunks";
+import { promiseToast } from "@/components/custom/utils/Toast";
 
 export function useInitUser() {
-  const dispatch = useDispatch();
-  const { user, role, loading, isLoggedIn, isStudent, isTeacher, isInstitute } =
-    useAuth();
+  const dispatch = useAppDispatch();
+  const { user, role, loading, isLoggedIn } = useAuth();
 
   useEffect(() => {
-    if (loading) return; // wait for session
-    if (!user) return; // no user session
+    if (loading) return;
+    if (!user) return;
 
-    console.log("User Session →", user);
-    console.log("User Role →", role);
-    console.log("Is New User →", user.new);
+    console.log("User Session →", user); //remove
+    console.log("User Role →", role); //remove
 
-    // OPTIONAL REDUX SYNC
-    /*
-    if (role === "student") dispatch(setStudent(user));
-    if (role === "teacher") dispatch(setTeacher(user));
-    if (role === "institute") dispatch(setInstitute(user));
-    dispatch(setUser(user));
-    */
+    if (role === "institute") {
+      console.log("Fetching institute data…"); //remove
+
+      promiseToast(dispatch(fetchInstitute(user.id)).unwrap(), {
+        loading: "Fetching institute data…",
+        success: "Institute data fetched successfully",
+        error: (err) => err?.message || "Error fetching institute data",
+      });
+    }
   }, [user, role, loading, isLoggedIn]);
 }

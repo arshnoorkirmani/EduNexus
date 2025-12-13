@@ -12,7 +12,7 @@ export function useAuth() {
   const user = session?.user as PublicUser | undefined;
 
   // Fix: UserType | null is the correct contract
-  const role: UserType | null = user?.user_type ?? null;
+  const role: UserType | null = user?.role ?? null;
 
   // State helpers
   const loading = status === "loading";
