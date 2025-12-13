@@ -18,17 +18,28 @@ import {
 } from "@/components/ui/tooltip";
 import { UserType } from "@/types/api/helper/next-auth";
 
+// Define status types separately from user types
+type UserStatus =
+  | "verified"
+  | "pending"
+  | "blocked"
+  | "inactive"
+  | "unverified";
+
 /* ---------------------------------------------------------
    ROLE → ICON MAPPING
 --------------------------------------------------------- */
-export const roleIcons: Record<string, LucideIcon> = {
+export const roleIcons: Record<UserType | UserStatus, LucideIcon> = {
+  // User types
   institute: Shield,
   teacher: GraduationCap,
   student: UserCheck,
   user: Users2,
-  verified: Verified, // ✔ Verified
-  pending: Clock, // ⏳ Waiting approval
-  blocked: Ban, // 🚫 Blocked
+
+  // Status types
+  verified: Verified,
+  pending: Clock,
+  blocked: Ban,
   inactive: UserX,
   unverified: Shield,
 };
@@ -37,7 +48,7 @@ export const roleIcons: Record<string, LucideIcon> = {
    PROPS
 --------------------------------------------------------- */
 interface RoleBadgeProps {
-  role?: UserType;
+  role?: UserType | UserStatus;
   size?: number;
   className?: string;
   showTooltip?: boolean;
@@ -47,19 +58,21 @@ interface RoleBadgeProps {
 /* ---------------------------------------------------------
    COMPONENT
 --------------------------------------------------------- */
-export function RoleBadge({
+export default function RoleBadge({
   role = "user",
   size = 18,
   className = "",
   showTooltip = true,
   description,
 }: RoleBadgeProps) {
-  const Icon = roleIcons[role] || Users2;
+  // Safely get the icon, fallback to Users2 if not found
+  const Icon = roleIcons[role as keyof typeof roleIcons] || Users2;
 
   const icon = (
     <Icon
       className={`text-neutral-300 opacity-80 ${className}`}
       style={{ width: size, height: size }}
+      aria-label={description || `User role: ${role}`}
     />
   );
 
@@ -68,10 +81,12 @@ export function RoleBadge({
   return (
     <Tooltip>
       <TooltipTrigger asChild>{icon}</TooltipTrigger>
-
       <TooltipContent side="top" className="capitalize">
         <p>{description || role}</p>
       </TooltipContent>
     </Tooltip>
   );
 }
+
+// Export as named export for backward compatibility
+export { RoleBadge };
