@@ -12,7 +12,7 @@ export const MENUS: MenuConfig = {
   user: USER_MENU,
 };
 
-export const can = (
+export const checkPathPermission = (
   permissions: InstitutePermissions | undefined,
   path?: string
 ): boolean => {

@@ -4,7 +4,10 @@ export interface Teacher extends Document {
     teacherId: string;
     password: string;
     userType: string;
-    verify: { isVerify: boolean; isActive: boolean };
+    verify: {
+      isVerified: boolean;
+      isLoginEnabled: boolean;
+    };
     lastLogin: Date | null;
   };
 

@@ -19,10 +19,10 @@ import Link from "next/link";
 const details = AppData;
 export default function Section() {
   return (
-    <section className="mx-4 my-5 space-y-5">
+    <section className="mx-2 md:mx-4 my-11 md:my-3 space-y-4">
       {/* === HERO SECTION === */}
       <Card className="overflow-visible border border-border/50 shadow-lg rounded-2xl bg-gradient-to-br from-background/80 to-muted/50 backdrop-blur-sm">
-        <div className="grid grid-cols-1 lg:grid-cols-[65%_30%] gap-8 md:gap-12 p-6 md:p-10 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[65%_30%] gap-8 md:gap-12 md:p-6 p-3 py-0  items-start">
           {/* LEFT: HERO CONTENT */}
           <div>
             <h1 className="text-4xl md:text-6xl font-extrabold leading-tight tracking-tight">
@@ -169,8 +169,8 @@ export default function Section() {
             Access portal according to your role.
           </p>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-          <InfoCard
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 p-0">
+          <RoleLoginCard
             icon={<UniversityIcon className="w-6 h-6" />}
             title="Institute Login"
             desc="Access full administrative controls and settings."
@@ -178,7 +178,7 @@ export default function Section() {
             href={AppData.routes.frontend.auth.login.institute}
           />
 
-          <InfoCard
+          <RoleLoginCard
             icon={<Users className="w-6 h-6" />}
             title="Institute User Login"
             desc="Manage internal institute modules and limited features."
@@ -186,7 +186,7 @@ export default function Section() {
             href={AppData.routes.frontend.auth.login.user}
           />
 
-          <InfoCard
+          <RoleLoginCard
             icon={<User className="w-6 h-6" />}
             title="Teacher Login"
             desc="Manage classes, assignments, students, and academic reports."
@@ -194,7 +194,7 @@ export default function Section() {
             href={AppData.routes.frontend.auth.login.teacher}
           />
 
-          <InfoCard
+          <RoleLoginCard
             icon={<User className="w-6 h-6" />}
             title="Student Login"
             desc="View attendance, grades, schedules, and institute updates."
@@ -305,7 +305,7 @@ function FeatureCard({
     </Card>
   );
 }
-interface InfoCardProps {
+interface RoleLoginCardProps {
   icon: React.ReactNode;
   title: string;
   desc: string;
@@ -313,13 +313,13 @@ interface InfoCardProps {
   href?: string;
 }
 
-export function InfoCard({
+export function RoleLoginCard({
   icon,
   title,
   desc,
   color = "primary",
   href = "#",
-}: InfoCardProps) {
+}: RoleLoginCardProps) {
   const accentClasses: Record<string, string> = {
     primary: "text-primary bg-primary/10 group-hover:bg-primary/20",
     "chart-1": "text-chart-1 bg-chart-1/10 group-hover:bg-chart-1/20",
@@ -330,7 +330,7 @@ export function InfoCard({
 
   return (
     <Card className="group p-6 rounded-2xl border border-border/40 bg-gradient-to-b from-background/80 to-muted/40 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 backdrop-blur-sm">
-      <CardContent className="space-y-3 p-0">
+      <CardContent className="space-y-3 p-0 justify-center items-center flex flex-col">
         {/* Icon */}
         <div
           className={`w-12 h-12 flex items-center justify-center rounded-xl ${accentClasses[color]} transition-colors duration-300 mb-3`}
@@ -347,7 +347,7 @@ export function InfoCard({
         <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
 
         {/* Action */}
-        <div className="pt-2">
+        <div className="pt-2 w-full">
           <Link href={href}>
             <Button
               variant="secondary"

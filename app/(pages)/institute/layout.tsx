@@ -1,30 +1,25 @@
 "use client";
 
-import UniversalSidebar from "@/components/custom/sidebar/universal-sidebar";
-import {
-  SidebarProvider,
-  SidebarInset,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { AppHeader } from "@/components/custom/user-pages/header/Header";
+import { AppFooter } from "@/components/custom/user-pages/footer/Footer";
 
-export default function SidebarClientWrapper({
+export default function InstituteLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <SidebarProvider>
-      {/* Permanent sidebar */}
-      <UniversalSidebar />
-      {/* The wrapper that pushes content correctly */}
-      <SidebarInset className="min-h-screen bg-background">
-        {/* You can keep the trigger here or remove */}
-        <header className="p-2 border-b">
-          <SidebarTrigger />
-        </header>
+    <div className="flex h-full flex-col">
+      {/* Fixed Header */}
+      <AppHeader />
 
-        <main className="p-4">{children}</main>
-      </SidebarInset>
-    </SidebarProvider>
+      {/* ✅ ONLY THIS SCROLLS */}
+      <main className="mx-auto w-full max-w-7xl p-6 space-y-8 min-h-auto">
+        {children}
+      </main>
+
+      {/* Fixed Footer */}
+      <AppFooter />
+    </div>
   );
 }

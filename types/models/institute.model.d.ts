@@ -115,8 +115,9 @@ export interface Institute extends Document {
   // -------------------------------------
   lastLogin?: Date | null;
   isOnboarded: boolean;
-  status: "active" | "inactive" | "blocked" | "pending";
+  status: status;
 
   createdAt?: Date;
   updatedAt?: Date;
 }
+export type status = "active" | "inactive" | "blocked" | "pending";

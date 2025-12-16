@@ -1,22 +1,36 @@
+export type StudentStatus =
+  | "active"
+  | "inactive"
+  | "passed"
+  | "failed"
+  | "suspended"
+  | "dropout";
+
 export interface Student extends Document {
   _id: Types.ObjectId | string;
   auth: {
     studentId: string;
     password: string;
-    userType: string;
-    verify: { isVerify: boolean; isActive: boolean };
+    role: string;
+    verify: {
+      isVerified: boolean;
+      isLoginEnabled: boolean;
+    };
+
     lastLogin: Date | null;
   };
 
   institute: {
     instituteId: Schema.Types.ObjectId;
     instituteCode: string;
+    instituteLogo: string;
+    instituteName: string;
   };
 
   personal: {
     firstName: string;
     lastName?: string;
-    name: string;
+    fullName: string;
     gender: "male" | "female" | "other";
     dob: Date;
     mobile: string;
@@ -32,13 +46,12 @@ export interface Student extends Document {
   };
 
   academic: {
+    registertionNo: string;
     rollNo: string;
-    className: string;
-    section?: string;
-    courseName: string;
+    timeing: Date;
     admissionDate: Date;
-    previousSchool?: string;
     course?: {
+      name: string;
       groupTitle?: string;
       courseTitle?: string;
       baseFee?: number;
@@ -46,20 +59,42 @@ export interface Student extends Document {
   };
 
   permissions: {
-    all: boolean; // grant all student permissions
-    profileEdit: boolean; // edit own profile
-    sendMessage: boolean; // send message to teacher/institute
-    inboxMessage: boolean; // receive messages
-    viewFees: boolean; // view fees & payment history
-    downloadDocuments: boolean; // download study materials, receipts, results
-    viewResults: boolean; // view exam results
-    attendanceView: boolean; // view attendance
-    assignmentsView: boolean; // view assignments/homework
-    timetableView: boolean; // view timetable/schedule
+    super: boolean; // grant all student permissions
+    profile: {
+      show: boolean;
+      edit: boolean;
+    }; // edit own profile
+    communication: {
+      sendMessage: boolean; // send messages
+      inboxMessage: boolean; // view inbox messages
+    };
+    fees: {
+      view: boolean;
+      pay: boolean;
+    };
+    document: {
+      upload: boolean;
+      download: boolean;
+    };
+    result: {
+      view: boolean;
+    };
+    attendance: {
+      view: boolean;
+    };
+    assignments: {
+      view: boolean;
+    };
+    timetable: {
+      view: boolean;
+    };
   };
 
   documents: {
-    profilePhoto?: string;
+    profilePhoto?: {
+      url: string;
+      uploadedAt: Date;
+    };
     aadhaar?: string;
     birthCertificate?: string;
   };
@@ -76,6 +111,15 @@ export interface Student extends Document {
     }[];
   };
 
-  status: "active" | "inactive" | "left" | "terminated";
+  statusHistory: {
+    status: StudentStatus;
+    date: Date;
+    reason?: string;
+    updatedBy: ObjectId;
+  }[];
+
   lastUpdatedBy?: Schema.Types.ObjectId;
+
+  createdAt: Date;
+  updatedAt: Date;
 }

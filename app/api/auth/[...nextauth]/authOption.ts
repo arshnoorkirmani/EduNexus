@@ -18,28 +18,42 @@ export const publicUser = (
   user: Institute | Student | Teacher | User,
   role: UserType
 ): PublicUser => {
+  const extractProfileUrl = (): string | null => {
+    switch (role) {
+      case "institute":
+        return (user as Institute).information?.profile_url ?? null;
+
+      case "student":
+        return (user as Student).documents?.profilePhoto?.url ?? null;
+
+      case "teacher":
+        return (user as Teacher).documents?.profilePhoto ?? null;
+
+      default:
+        return null;
+    }
+  };
+
   const base = {
     id: String(user._id),
+
     name:
       role === "institute"
-        ? (user as Institute).username
+        ? (user as Institute).username ?? "Institute"
         : role === "student"
-        ? (user as Student).personal.name
-        : (user as Teacher).personal.name,
+        ? (user as Student).personal?.fullName ?? "Student"
+        : (user as Teacher).personal?.name ?? "Teacher",
 
-    profile_url:
-      role === "institute"
-        ? (user as Institute).information?.profile_url || null
-        : (user as Student | Teacher).documents?.profilePhoto || null,
+    profile_url: extractProfileUrl(),
 
     logo:
       role === "institute"
-        ? (user as Institute).information?.logo || null
+        ? (user as Institute).information?.logo ?? null
         : null,
 
     isVerified:
       (user as Institute)?.isVerified ??
-      (user as Student | Teacher | User)?.auth.verify?.isVerify ??
+      (user as Student | Teacher | User)?.auth?.verify?.isVerified ??
       false,
 
     isNew: false,
@@ -63,12 +77,11 @@ export const publicUser = (
     };
   }
 
-  // Institute
   return {
     ...base,
-    isNew: (user as Institute).isOnboarded,
     role: "institute",
     email: (user as Institute).email,
+    isNew: !(user as Institute).isOnboarded,
   };
 };
 
@@ -99,7 +112,7 @@ export const authOptions: NextAuthOptions = {
             email: 1,
             password: 1,
             isVerified: 1,
-
+            isOnboarded: 1,
             // correct fields:
             username: 1,
             "information.logo": 1,

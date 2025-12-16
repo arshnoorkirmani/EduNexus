@@ -112,18 +112,18 @@ export default function UniversalLogin({ userType }: UniversalLoginProps) {
   };
 
   return (
-    <div className="container flex items-center justify-center min-h-screen p-4">
-      <Card className="w-[420px] gap-3">
+    <div className="container flex items-center justify-center min-h-screen md:p-4 w-full">
+      <Card className="w-[360px] sm:w-[400px] gap-3">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold tracking-tight">
             {config.title}
 
-            <CardDescription className="font-normal tracking-normal">
+            <CardDescription className="font-normal tracking-normal text-xs">
               {config.subtitle}
             </CardDescription>
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 md:px-auto">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               {/* IDENTIFIER */}

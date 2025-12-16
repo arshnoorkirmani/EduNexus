@@ -95,23 +95,31 @@ export default function Navbar() {
 /* ======================= Mobile Menu ======================= */
 function MobileMenu() {
   const { role } = useAuth();
-  console.log("User Type:", `${role}/dashboard`);
+
   return (
     <Popover>
+      {/* ===== Trigger ===== */}
       <PopoverTrigger asChild>
         <Button
           aria-label="Open menu"
-          className="md:hidden p-0 w-9 h-9 flex items-center justify-center"
           variant="ghost"
           size="icon"
+          className="
+            md:hidden
+            w-9 h-9
+            rounded-lg
+            text-muted-foreground
+            hover:bg-muted/60
+            active:scale-95
+            transition-all
+          "
         >
-          {/* Hamburger Icon */}
           <svg
             className="w-5 h-5"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
-            strokeWidth="2"
+            strokeWidth={2}
           >
             <path
               strokeLinecap="round"
@@ -122,31 +130,72 @@ function MobileMenu() {
         </Button>
       </PopoverTrigger>
 
+      {/* ===== Content ===== */}
       <PopoverContent
         align="end"
-        className="w-56 mt-2 p-2 rounded-xl border border-border/40 shadow-lg bg-background/95 backdrop-blur-sm"
+        sideOffset={10}
+        className="
+          w-60
+          p-3
+          rounded-2xl
+          border border-border/50
+          bg-background/95
+          backdrop-blur-xl
+          shadow-[0_20px_40px_rgba(0,0,0,0.12)]
+          animate-in
+          fade-in
+          zoom-in-95
+        "
       >
-        <NavigationMenu className="max-w-none w-full">
-          <NavigationMenuList className="flex flex-col items-start gap-1">
-            {details.links.map((link, i) => (
-              <NavigationMenuItem key={i} className="w-full">
-                <NavigationMenuLink
-                  href={
-                    link.title == "Home" && role
-                      ? `${role}/dashboard`
-                      : link.href
-                  }
-                  className="block w-full py-2 px-2 rounded-md hover:bg-muted text-sm font-medium transition-colors"
-                >
-                  {link.title}
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-            ))}
+        <NavigationMenu className="w-full max-w-none">
+          <NavigationMenuList className="flex flex-col gap-1">
+            {/* ===== Links ===== */}
+            {details.links.map((link, index) => {
+              const href =
+                link.title === "Home" && role
+                  ? `/${role}/dashboard`
+                  : link.href;
 
-            <div className="border-t border-border/40 w-full my-2" />
+              const isPrimary = link.title === "Home" && role;
 
-            <Link href="/auth/create-institute-account" className="w-full">
-              <Button className="w-full text-sm">Get Started</Button>
+              return (
+                <NavigationMenuItem key={index} className="w-full">
+                  <NavigationMenuLink
+                    href={href}
+                    className={cn(
+                      "flex items-center justify-center w-full px-4 py-2.5 rounded-lg text-sm font-medium transition-all",
+                      isPrimary
+                        ? "bg-muted/60 text-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                    )}
+                  >
+                    {isPrimary ? "Dashboard" : link.title}
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+              );
+            })}
+
+            {/* ===== Divider ===== */}
+            <div className="my-2 h-px w-full bg-gradient-to-r from-transparent via-border to-transparent" />
+
+            {/* ===== CTA ===== */}
+            <Link
+              href={AppData.routes.frontend.auth.register.institute}
+              className="w-full"
+            >
+              <Button
+                size="sm"
+                className="
+                  w-full
+                  rounded-lg
+                  font-medium
+                  shadow-sm
+                  hover:shadow-md
+                  transition-all
+                "
+              >
+                Get Started
+              </Button>
             </Link>
           </NavigationMenuList>
         </NavigationMenu>

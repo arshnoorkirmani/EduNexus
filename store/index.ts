@@ -3,13 +3,19 @@ import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 
 // Reducers
 import instituteReducer from "./slice/instituteSlice";
+import studentReducer from "./slice/studentSlice";
+import teacherReducer from "./slice/teacherSlice";
+import userReducer from "./slice/userSlice";
 
 // ------------------------------------
 // STORE
 // ------------------------------------
 export const store = configureStore({
   reducer: {
-    institute: instituteReducer, // ✅ FIXED
+    institute: instituteReducer,
+    student: studentReducer,
+    teacher: teacherReducer,
+    user: userReducer,
   },
 });
 

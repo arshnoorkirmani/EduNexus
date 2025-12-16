@@ -156,13 +156,13 @@ export const EmailInput = forwardRef<HTMLInputElement, EmailInputProps<any>>(
           data-invalid={error ? "" : undefined}
           placeholder="you@example.com"
           // IMPORTANT: keep className from FormControl first so it isn't overwritten
-          className={cn(className, iconShow && "pl-12 w-full")}
+          className={cn("pr-6", className, iconShow && "pl-11 w-full")}
         />
 
         {loading && (
           <LucideLoader
             size={18}
-            className="animate-spin absolute right-3 top-1/2 -translate-y-1/2"
+            className="animate-spin absolute right-1.5 top-1/2 -translate-y-1/2"
           />
         )}
       </div>

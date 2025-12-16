@@ -82,12 +82,12 @@ export function SidebarUserFooter() {
   };
 
   return (
-    <SidebarFooter className="border-t backdrop-blur-xl">
+    <SidebarFooter className="border-t backdrop-blur-xl rounded-b-2xl">
       {/* ------------------ COLLAPSED ------------------ */}
       <div className="hidden group-data-[state=collapsed]:flex justify-center">
         <Popover>
           <PopoverTrigger asChild>
-            <div className="p-1 rounded-xl cursor-pointer hover:bg-accent/70 transition">
+            <div className="p-1 rounded-xl cursor-pointer transition">
               <ProfileAvatar
                 profileUrl={activeUser.avatar || ""}
                 name={activeUser.name}
@@ -98,7 +98,7 @@ export function SidebarUserFooter() {
           <PopoverContent
             align="center"
             className="w-72 ml-1 mb-1.5 p-4 rounded-2xl border border-white/10 shadow-2xl
-              bg-black/60 backdrop-blur-xl animate-in fade-in-0 zoom-in-90"
+              backdrop-blur-xl animate-in fade-in-0 zoom-in-90"
           >
             <UserSwitcherList
               users={users}
@@ -116,8 +116,8 @@ export function SidebarUserFooter() {
           <Popover>
             <PopoverTrigger asChild className="py-5">
               <SidebarMenuButton
-                className="flex items-center gap-3 px-3 py-8 rounded-xl bg-sidebar/60
-                  hover:bg-accent/50 border cursor-pointer hover:border-white/10
+                className="flex items-center gap-3 px-3 py-8 rounded-xl
+                 border cursor-pointer hover:border-white/10
                   transition shadow"
               >
                 <ProfileAvatar
@@ -126,12 +126,10 @@ export function SidebarUserFooter() {
                 />
 
                 <div className="flex flex-col flex-1">
-                  <span className="text-sm font-semibold text-white">
+                  <span className="text-sm font-semibold ">
                     {activeUser.name}
                   </span>
-                  <span className="text-[8px] text-neutral-400">
-                    {activeUser.identifier}
-                  </span>
+                  <span className="text-[8px] ">{activeUser.identifier}</span>
                 </div>
 
                 {/* ⭐ NEW BADGE */}
@@ -147,7 +145,7 @@ export function SidebarUserFooter() {
               align="center"
               alignOffset={8}
               className="w-80 ml-1 mb-1 p-5 rounded-2xl border border-white/10 shadow-2xl
-                bg-black/60 backdrop-blur-xl animate-in fade-in-0 zoom-in-95"
+              backdrop-blur-xl animate-in fade-in-0 zoom-in-95"
             >
               <UserSwitcherList
                 users={users}
@@ -185,7 +183,9 @@ export function UserSwitcherList({
 }) {
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm font-medium text-white/80">Switch Account</p>
+      <p className="text-sm font-medium text-muted-foreground">
+        Switch Account
+      </p>
 
       <div className="flex flex-col gap-3">
         {users.map((u) => {
@@ -195,7 +195,7 @@ export function UserSwitcherList({
             <button
               key={u.id}
               onClick={() => onSwitch(u)}
-              className={`flex items-center justify-between w-full rounded-xl px-3 py-2.5 transition
+              className={`flex items-center justify-between w-full rounded-xl px-3 py-2.5 transition border-1 cursor-pointer hover:bg-muted
                 ${isActive ? "bg-white/10" : "hover:bg-white/5"}`}
             >
               <div className="flex items-center gap-3">
@@ -206,12 +206,8 @@ export function UserSwitcherList({
                 />
 
                 <div className="flex flex-col text-left">
-                  <span className="text-sm font-semibold text-white">
-                    {u.name}
-                  </span>
-                  <span className="text-[10px] text-neutral-400">
-                    {u.identifier}
-                  </span>
+                  <span className="text-sm font-semibold ">{u.name}</span>
+                  <span className="text-[10px] ">{u.identifier}</span>
                 </div>
               </div>
 

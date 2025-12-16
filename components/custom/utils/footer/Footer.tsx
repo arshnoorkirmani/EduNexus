@@ -5,7 +5,7 @@ import { AppData } from "@/config/appConfig";
 export default function Footer() {
   return (
     <footer className="border-t bg-background w-full">
-      <div className="max-w-7xl mx-auto px-6 py-6 flex flex-col md:flex-row justify-between items-center gap-3 text-sm text-muted-foreground">
+      <div className="max-w-7xl mx-auto h-fit px-6 py-6 flex flex-col md:flex-row justify-between items-center gap-3 text-sm text-muted-foreground">
         {/* === Left Section === */}
         <div className="flex items-center gap-1">
           <span>© {new Date().getFullYear()}</span>

@@ -35,13 +35,14 @@ import { Users2, Shield, GraduationCap, UserCheck } from "lucide-react";
 import { SidebarUserFooter } from "./sidebaruserfooter";
 import { ProfileAvatar } from "../utils/ProfileAvtar";
 import { AppData } from "@/config/appConfig";
-import { can, MENUS } from "./menus";
+import { checkPathPermission, MENUS } from "./menus";
 import { useAppSelector } from "@/store";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LogoutButton } from "../utils/logOutButton";
 import { errorToast } from "../utils/Toast";
 import { useEffect, useMemo } from "react";
 import { roleIcons } from "../utils/RoleBadge";
+import { useSession } from "next-auth/react";
 // ----------------------------------------------------------
 // COMPONENT
 // ----------------------------------------------------------
@@ -49,14 +50,52 @@ import { roleIcons } from "../utils/RoleBadge";
 export default function ReadySidebar() {
   const pathname = usePathname();
   // const menus = MENUS["institute"];
+  const { data: session } = useSession();
   const institute = useAppSelector((state) => state.institute);
+  const student = useAppSelector((state) => state.student);
+  const teacher = useAppSelector((state) => state.teacher);
+  const user = useAppSelector((state) => state.user);
+  const role = useMemo(() => session?.user.role, [session]);
   const roleKey =
-    institute.status === "active"
-      ? "verified"
-      : institute.status || institute.role || "user";
-
+    role === "institute"
+      ? institute?.status === "active"
+        ? "verified"
+        : institute?.status ?? institute?.role ?? "user"
+      : role === "student"
+      ? student?.status === "active"
+        ? "verified"
+        : student?.status ?? "student"
+      : role === "teacher"
+      ? teacher?.status === "active"
+        ? "verified"
+        : teacher?.status ?? "teacher"
+      : role ?? "user";
+  // -----------------------------------------
+  //        Set Profile
+  // -----------------------------------------
   const PROFILE = useMemo(() => {
-    if (institute.loading || institute.error) {
+    // ------------------------------
+    // GLOBAL FALLBACK (loading/error)
+    // ------------------------------
+    console.log(
+      "Sidebar",
+      role,
+      institute.loading,
+      institute.error
+      // student.loading,
+      // student.error,
+      // teacher.loading,
+      // teacher.error
+    );
+    if (
+      institute?.loading ||
+      institute?.error
+      // ||
+      // student?.loading ||
+      // student?.error ||
+      // teacher?.loading ||
+      // teacher?.error
+    ) {
       return {
         name: "User",
         avatar: AppData.default.institute.logo,
@@ -65,14 +104,63 @@ export default function ReadySidebar() {
       };
     }
 
+    // ------------------------------
+    // INSTITUTE USER
+    // ------------------------------
+    if (role === "institute") {
+      return {
+        name: institute?.username ?? `${AppData.app.name} Institute`,
+        avatar:
+          institute?.information?.profile_url ?? AppData.default.institute.logo,
+        email: institute?.information?.email ?? "",
+        role: institute?.role ?? "institute",
+      };
+    }
+
+    // ------------------------------
+    // STUDENT USER
+    // ------------------------------
+    if (role === "student") {
+      return {
+        name: student?.name ?? "Student",
+        avatar: student?.profile_url ?? AppData.default.student.profile_url,
+        email: student?.email ?? "",
+        role: "student",
+      };
+    }
+
+    // ------------------------------
+    // TEACHER USER
+    // ------------------------------
+    if (role === "teacher") {
+      return {
+        name: teacher?.name ?? "Teacher",
+        avatar: teacher?.profile_url ?? AppData.default.teacher.profile_url,
+        email: teacher?.email ?? "",
+        role: "teacher",
+      };
+    }
+    // ------------------------------
+    // Base USER
+    // ------------------------------
+    if (role === "user") {
+      return {
+        name: user?.name ?? "User",
+        avatar: user?.profile_url ?? AppData.default.user.profile_url,
+        email: user?.email ?? "",
+        role: "user",
+      };
+    }
+    // ------------------------------
+    // FALLBACK USER
+    // ------------------------------
     return {
-      name: institute.username ?? `${AppData.app.name} User`,
-      avatar:
-        institute.information?.profile_url || AppData.default.institute.logo,
-      email: institute.information?.email ?? "",
-      role: institute.role ?? "user",
+      name: "Base User",
+      avatar: AppData.default.institute.logo,
+      email: "",
+      role: "user",
     };
-  }, [institute]);
+  }, [role, institute, student, teacher, user]);
 
   console.log({ institute }); //remove
   useEffect(() => {
@@ -95,7 +183,7 @@ export default function ReadySidebar() {
       .map((section) => ({
         ...section,
         items: section.items.filter((item) =>
-          can(institute.permissions, item.id)
+          checkPathPermission(institute.permissions, item.id)
         ),
       }))
       .filter((section) => section.items.length > 0);
@@ -156,6 +244,7 @@ export default function ReadySidebar() {
   return (
     <Sidebar
       side="left"
+      variant="floating"
       collapsible="icon"
       className="border-r bg-background transition-all duration-300 ease-in-out"
     >

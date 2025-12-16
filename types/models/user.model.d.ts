@@ -7,7 +7,10 @@ export interface User extends Document {
     email?: string;
     password: string;
     userType: "admin" | "teacher" | "student";
-    verify: { isVerify: boolean; isActive: boolean };
+    verify: {
+      isVerified: boolean;
+      isLoginEnabled: boolean;
+    };
     lastLogin: Date | null;
   };
 

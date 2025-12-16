@@ -2,9 +2,6 @@ import type { Metadata } from "next";
 import { AppData } from "@/config/appConfig";
 
 export class MetadataBuilder {
-  /**
-   * Base metadata applied to all pages
-   */
   private static base(): Metadata {
     return {
       metadataBase: new URL(AppData.app.url),
@@ -19,14 +16,6 @@ export class MetadataBuilder {
 
       creator: AppData.app.name,
       publisher: AppData.app.name,
-
-      viewport: {
-        width: "device-width",
-        initialScale: 1,
-        maximumScale: 1,
-      },
-
-      themeColor: AppData.app.themeColor ?? "#2563eb",
 
       keywords: [
         AppData.app.name,
@@ -72,51 +61,30 @@ export class MetadataBuilder {
     };
   }
 
-  /**
-   * Authentication pages
-   */
   static auth(title = "Authentication"): Metadata {
-    const base = this.base();
-
     return {
-      ...base,
-
+      ...this.base(),
       title: {
         default: title,
         template: `%s — ${AppData.app.name}`,
       },
-
       description: `Secure authentication for ${AppData.app.name}. Login or create your account.`,
-
       robots: {
         index: false,
         follow: false,
         nocache: true,
-        googleBot: {
-          index: false,
-          follow: false,
-          noimageindex: true,
-        },
       },
     };
   }
 
-  /**
-   * Dashboard / internal pages
-   */
   static dashboard(title = "Dashboard", allowIndex = false): Metadata {
-    const base = this.base();
-
     return {
-      ...base,
-
+      ...this.base(),
       title: {
         default: `${title} — ${AppData.app.name}`,
         template: `%s — ${AppData.app.name}`,
       },
-
       description: `${AppData.app.name} dashboard for managing courses, students, staff, and institute operations.`,
-
       robots: {
         index: allowIndex,
         follow: allowIndex,
@@ -124,9 +92,6 @@ export class MetadataBuilder {
     };
   }
 
-  /**
-   * Public-facing pages (SEO optimized)
-   */
   static page({
     title,
     description,
@@ -142,16 +107,12 @@ export class MetadataBuilder {
 
     return {
       ...base,
-
       title: {
         default: `${title} — ${AppData.app.name}`,
         template: `%s — ${AppData.app.name}`,
       },
-
       description,
-
       keywords: [...(base.keywords ?? []), ...keywords],
-
       robots: {
         index,
         follow: index,

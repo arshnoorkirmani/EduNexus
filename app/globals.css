@@ -120,3 +120,16 @@
     @apply bg-background text-foreground;
   }
 }
+html,
+*::-webkit-scrollbar {
+  @apply w-2;
+}
+html,
+*::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+html,
+*::-webkit-scrollbar-thumb {
+  @apply bg-accent;
+  scroll-behavior: smooth;
+}

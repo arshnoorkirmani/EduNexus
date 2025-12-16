@@ -1,6 +1,7 @@
 // ==========================================================
 // INSTITUTE INFORMATION
 
+import { status } from "./institute.model";
 import { Student } from "./student.model";
 import { Teacher } from "./teacher.model";
 import { User } from "./user.model";
@@ -195,7 +196,7 @@ export interface InstituteSlice {
   permissions: InstitutePermissions;
 
   lastLogin: string | null | Date;
-  status: "active" | "inactive" | "blocked" | "pending";
+  status: status;
 
   createdAt: string | null | Date;
   updatedAt: string | null | Date;
