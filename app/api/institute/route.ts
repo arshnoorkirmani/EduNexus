@@ -118,6 +118,7 @@ export async function POST(request: NextRequest) {
       verifyCode,
       verifyCodeExpiry,
       isVerified: false,
+      status: "pending",
     });
 
     // send OTP

@@ -15,6 +15,7 @@ export const AppData = {
 
       image: process.env.NEXT_PUBLIC_META_OG_IMAGE || "/og-image.png",
     },
+    themeColor: "",
   },
 
   meta: {

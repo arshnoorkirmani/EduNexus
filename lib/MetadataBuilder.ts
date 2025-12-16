@@ -20,6 +20,14 @@ export class MetadataBuilder {
       creator: AppData.app.name,
       publisher: AppData.app.name,
 
+      viewport: {
+        width: "device-width",
+        initialScale: 1,
+        maximumScale: 1,
+      },
+
+      themeColor: AppData.app.themeColor ?? "#2563eb",
+
       keywords: [
         AppData.app.name,
         "Institute Management System",
@@ -34,6 +42,10 @@ export class MetadataBuilder {
       ],
 
       category: "technology",
+
+      alternates: {
+        canonical: AppData.app.url,
+      },
 
       openGraph: {
         type: "website",
@@ -64,11 +76,13 @@ export class MetadataBuilder {
    * Authentication pages
    */
   static auth(title = "Authentication"): Metadata {
+    const base = this.base();
+
     return {
-      ...this.base(),
+      ...base,
 
       title: {
-        default: `${title}`,
+        default: title,
         template: `%s — ${AppData.app.name}`,
       },
 
@@ -91,8 +105,10 @@ export class MetadataBuilder {
    * Dashboard / internal pages
    */
   static dashboard(title = "Dashboard", allowIndex = false): Metadata {
+    const base = this.base();
+
     return {
-      ...this.base(),
+      ...base,
 
       title: {
         default: `${title} — ${AppData.app.name}`,
@@ -122,8 +138,10 @@ export class MetadataBuilder {
     index?: boolean;
     keywords?: string[];
   }): Metadata {
+    const base = this.base();
+
     return {
-      ...this.base(),
+      ...base,
 
       title: {
         default: `${title} — ${AppData.app.name}`,
@@ -132,7 +150,7 @@ export class MetadataBuilder {
 
       description,
 
-      keywords: [...this.base().keywords!, ...keywords],
+      keywords: [...(base.keywords ?? []), ...keywords],
 
       robots: {
         index,

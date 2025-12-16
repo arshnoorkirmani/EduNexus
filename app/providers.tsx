@@ -26,10 +26,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         {/* ✔ SessionProvider सबसे ऊपर */}
         <SessionProvider>
           {/* ✔ Redux Provider अब SessionProvider के अंदर */}
-          <ReduxProvider store={store}>
-            {/* ✔ Hook अब दोनों providers के अंदर, safe */}
-            <InitUserWrapper>{children}</InitUserWrapper>
-          </ReduxProvider>
+          <ReduxProvider store={store}>{children}</ReduxProvider>
         </SessionProvider>
 
         <Loader />
@@ -38,9 +35,4 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       <Toaster richColors />
     </ThemeProvider>
   );
-}
-
-export function InitUserWrapper({ children }: { children: React.ReactNode }) {
-  useInitUser(); // अब यह Redux + Session दोनों context में है (SAFE)
-  return <>{children}</>;
 }

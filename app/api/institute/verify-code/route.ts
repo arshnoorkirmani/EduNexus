@@ -98,6 +98,7 @@ export async function POST(req: Request) {
 
     // 9) Mark verified
     institute.isVerified = true;
+    institute.status = "active";
 
     // Optional: Clear OTP fields
     institute.verifyCode = null;
