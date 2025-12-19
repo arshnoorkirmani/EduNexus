@@ -1,13 +1,34 @@
-export type StudentStatus =
-  | "active"
-  | "inactive"
-  | "passed"
-  | "failed"
-  | "suspended"
-  | "dropout";
+export type StudentDocumentFile = {
+  name: string;
+  url: string;
+  mimeType: string;
+  size: number; // bytes
+};
+
+export type UploadedBy = {
+  name: string;
+  email: string;
+};
+
+export type StudentDocument = {
+  type: string; // Aadhaar Card, Marksheet, TC, Profile Photo
+  file: StudentDocumentFile;
+  uploadedAt: Date;
+  uploadedBy: UploadedBy;
+
+  // optional future-ready fields
+  verified?: {
+    status: boolean;
+    verifiedAt?: Date;
+    verifiedBy?: string;
+  };
+
+  visibility?: "institute" | "user" | "student";
+};
 
 export interface Student extends Document {
   _id: Types.ObjectId | string;
+
   auth: {
     studentId: string;
     password: string;
@@ -16,7 +37,6 @@ export interface Student extends Document {
       isVerified: boolean;
       isLoginEnabled: boolean;
     };
-
     lastLogin: Date | null;
   };
 
@@ -37,6 +57,7 @@ export interface Student extends Document {
     email?: string;
     fatherName?: string;
     address?: {
+      fullAddress?: string;
       line?: string;
       city?: string;
       state?: string;
@@ -48,7 +69,7 @@ export interface Student extends Document {
   academic: {
     registertionNo: string;
     rollNo: string;
-    timeing: Date;
+    timing: Date;
     admissionDate: Date;
     course?: {
       name: string;
@@ -59,45 +80,19 @@ export interface Student extends Document {
   };
 
   permissions: {
-    super: boolean; // grant all student permissions
-    profile: {
-      show: boolean;
-      edit: boolean;
-    }; // edit own profile
-    communication: {
-      sendMessage: boolean; // send messages
-      inboxMessage: boolean; // view inbox messages
-    };
-    fees: {
-      view: boolean;
-      pay: boolean;
-    };
-    document: {
-      upload: boolean;
-      download: boolean;
-    };
-    result: {
-      view: boolean;
-    };
-    attendance: {
-      view: boolean;
-    };
-    assignments: {
-      view: boolean;
-    };
-    timetable: {
-      view: boolean;
-    };
+    super: boolean;
+    profile: { show: boolean; edit: boolean };
+    communication: { sendMessage: boolean; inboxMessage: boolean };
+    fees: { view: boolean; pay: boolean };
+    document: { upload: boolean; download: boolean };
+    result: { view: boolean };
+    attendance: { view: boolean };
+    assignments: { view: boolean };
+    timetable: { view: boolean };
   };
 
-  documents: {
-    profilePhoto?: {
-      url: string;
-      uploadedAt: Date;
-    };
-    aadhaar?: string;
-    birthCertificate?: string;
-  };
+  /** ✅ NEW STRUCTURE */
+  documents: StudentDocument[];
 
   fees: {
     totalFees: number;
