@@ -4,7 +4,7 @@ import mongoose, { Schema, Document } from "mongoose";
 const TeacherSchema = new Schema<Teacher>(
   {
     auth: {
-      teacherId: { type: String, required: true, unique: true },
+      teacherId: { type: String, required: true },
       password: { type: String, required: true },
       userType: { type: String, default: "teacher" },
       verify: {

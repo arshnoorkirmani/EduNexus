@@ -1,6 +1,8 @@
-// =============================
-// SIZE CONFIG
+"use client";
 
+// =============================
+// IMPORTS
+// =============================
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -11,6 +13,8 @@ import {
 import { cn } from "@/lib/utils";
 import { LucideIcon } from "lucide-react";
 
+// =============================
+// SIZE CONFIG
 // =============================
 const avatarSizes = {
   sm: {
@@ -44,10 +48,8 @@ type AvatarSize = keyof typeof avatarSizes;
 // =============================
 // HELPERS
 // =============================
-
-// Convert "h-12 w-12" → "group-data-[collapsible=icon]:h-12 group-data-[collapsible=icon]:w-12"
-function collapsedClasses(sizeString: string) {
-  return sizeString
+function collapsedClasses(classes: string) {
+  return classes
     .split(" ")
     .map((cls) => `group-data-[collapsible=icon]:${cls}`)
     .join(" ");
@@ -57,11 +59,11 @@ function collapsedClasses(sizeString: string) {
 // COMPONENT
 // =============================
 interface ProfileAvatarProps {
-  profileUrl: string;
+  profileUrl?: string;
   name: string;
-  isBadge?: boolean;
-  icon?: LucideIcon;
-  label?: string;
+  isBadge?: boolean; // green dot
+  icon?: LucideIcon; // role badge
+  label?: string; // tooltip label
   size?: AvatarSize;
   collapsed?: AvatarSize;
 }
@@ -78,30 +80,31 @@ export function ProfileAvatar({
   const normal = avatarSizes[size];
   const collapsedSize = collapsed ? avatarSizes[collapsed] : null;
 
-  const showIconBadge = Boolean(Icon);
-  const showGreenDot = isBadge && !Icon;
+  const showRoleBadge = Boolean(Icon);
+  const showStatusDot = isBadge && !Icon;
+
   return (
-    <div className="relative">
+    <div className="relative inline-flex">
       {/* AVATAR */}
       <Avatar
         className={cn(
-          "border border-white/20 shadow-xl transition-all",
+          "border border-white/20 shadow-md transition-all",
           normal.avatar,
-          "group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8"
-          // collapsedSize && collapsedClasses(collapsedSize.avatar)
+          collapsedSize && collapsedClasses(collapsedSize.avatar)
         )}
       >
-        <AvatarImage src={profileUrl} />
+        <AvatarImage src={profileUrl} alt={name} />
         <AvatarFallback className="uppercase">
           {name.slice(0, 2)}
         </AvatarFallback>
       </Avatar>
 
       {/* ROLE ICON BADGE */}
-      {showIconBadge && Icon && (
+      {showRoleBadge && Icon && (
         <div
           className={cn(
-            "absolute bg-black/70 backdrop-blur border border-white/20 flex items-center justify-center rounded-full transition-all",
+            "absolute z-10 flex items-center justify-center rounded-full",
+            "bg-black/70 backdrop-blur border border-white/20",
             normal.roleBadge,
             normal.offsetRole,
             collapsedSize && collapsedClasses(collapsedSize.roleBadge),
@@ -119,20 +122,17 @@ export function ProfileAvatar({
               />
             </TooltipTrigger>
 
-            {label && (
-              <TooltipContent side="top">
-                <p>{label}</p>
-              </TooltipContent>
-            )}
+            {label && <TooltipContent side="top">{label}</TooltipContent>}
           </Tooltip>
         </div>
       )}
 
       {/* STATUS DOT */}
-      {showGreenDot && (
+      {showStatusDot && (
         <Badge
+          aria-label="Online"
           className={cn(
-            "absolute bg-green-500 p-0 rounded-full transition-all",
+            "absolute z-10 rounded-full bg-green-500 p-0",
             normal.status,
             normal.offsetStatus,
             collapsedSize && collapsedClasses(collapsedSize.status),

@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import { MetadataBuilder } from "@/lib/MetadataBuilder";
 import Providers from "./providers";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { GoToTopButton } from "@/components/custom/utils/GoToTopButton";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -27,8 +28,9 @@ export default function RootLayout({
         className={`${inter.className} w-screen h-screen overflow-hidden bg-background text-foreground relative`}
       >
         {/* 🌍 GLOBAL SHADCN SCROLL */}
-        <ScrollArea className="h-full scroll-smooth">
+        <ScrollArea id="app-scroll-area" className="h-full scroll-smooth">
           <Providers>{children}</Providers>
+          <GoToTopButton />
         </ScrollArea>
       </body>
     </html>

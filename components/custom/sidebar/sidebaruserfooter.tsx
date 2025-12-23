@@ -212,8 +212,10 @@ export function UserSwitcherList({
               </div>
 
               {/* ⭐ NEW ROLE BADGE */}
-              <Button variant={"ghost"} className="cursor-pointer">
-                <Settings size={16} />
+              <Button asChild variant={"ghost"} className="cursor-pointer">
+                <div>
+                  <Settings size={16} />
+                </div>
               </Button>
             </button>
           );

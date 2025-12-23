@@ -35,7 +35,7 @@ import { Users2, Shield, GraduationCap, UserCheck } from "lucide-react";
 import { SidebarUserFooter } from "./sidebaruserfooter";
 import { ProfileAvatar } from "../utils/ProfileAvtar";
 import { AppData } from "@/config/appConfig";
-import { checkPathPermission, MENUS } from "./menus";
+import { checkPathPermission, hasMenuPermission, MENUS } from "./menus";
 import { useAppSelector } from "@/store";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LogoutButton } from "../utils/logOutButton";
@@ -43,6 +43,8 @@ import { errorToast } from "../utils/Toast";
 import { useEffect, useMemo } from "react";
 import { roleIcons } from "../utils/RoleBadge";
 import { useSession } from "next-auth/react";
+import { useAuth } from "@/hooks/useAuth";
+import { cn } from "@/lib/utils";
 // ----------------------------------------------------------
 // COMPONENT
 // ----------------------------------------------------------
@@ -55,7 +57,7 @@ export default function ReadySidebar() {
   const student = useAppSelector((state) => state.student);
   const teacher = useAppSelector((state) => state.teacher);
   const user = useAppSelector((state) => state.user);
-  const role = useMemo(() => session?.user.role, [session]);
+  const { role } = useAuth();
   const roleKey =
     role === "institute"
       ? institute?.status === "active"
@@ -179,15 +181,23 @@ export default function ReadySidebar() {
 
   // ==============================================
   const menus = useMemo(() => {
-    return MENUS.institute
+    if (!role) return [];
+
+    const roleMenus = MENUS[role] ?? [];
+
+    return roleMenus
       .map((section) => ({
         ...section,
         items: section.items.filter((item) =>
-          checkPathPermission(institute.permissions, item.id)
+          hasMenuPermission({
+            role,
+            institute,
+            itemId: item.id,
+          })
         ),
       }))
       .filter((section) => section.items.length > 0);
-  }, [institute.permissions]);
+  }, [role, institute.permissions]);
 
   // console.log("filteredMenus", filteredMenus);
   // ==============================================
@@ -324,7 +334,13 @@ export default function ReadySidebar() {
                   const active = pathname.startsWith(item.url);
                   return (
                     <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild isActive={active}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={active}
+                        className={cn(
+                          active && "border-l-2 border-primary rounded-l-xs"
+                        )}
+                      >
                         <Link
                           href={item.url}
                           className="flex items-center gap-3 pl-4 py-2"

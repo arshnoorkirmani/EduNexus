@@ -4,48 +4,75 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Bell, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ProfileDropdown } from "./ProfileMenu";
 import AutoBreadcrumb from "./autoBreadcrumb";
+import { ProfileDropdown } from "./ProfileMenu";
 import { ThemeToggle } from "../../utils/theme-toggle";
+import { UserType } from "@/types/api/helper/next-auth";
+
+interface User {
+  name: string;
+  role: UserType;
+  organization?: string;
+}
 
 export function AppHeader() {
-  // 🔐 Later replace with session / redux
-  const user = {
+  // 🔐 Replace with session/auth later
+  const user: User = {
     name: "Arshnoor",
-    role: "admin" as const,
+    role: "institute",
+    organization: "Hope Group of Institutes",
   };
 
   return (
-    <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-border/40 bg-background/80 px-4 backdrop-blur-md">
-      {/* LEFT */}
-      <div className="flex gap-4">
-        <div className="flex items-center gap-2">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur">
+      <div className="flex h-16 items-center justify-between px-4 md:px-6">
+        {/* LEFT SECTION */}
+        <div className="flex items-center gap-4">
           <SidebarTrigger />
-          <div className="hidden md:block">
-            <span>Hope Group of Institute</span>
+
+          {/* Brand & Context */}
+          <div className="hidden md:flex flex-col">
+            <span className="text-sm font-semibold text-foreground">
+              {user.organization ?? "Dashboard"}
+            </span>
             <AutoBreadcrumb />
           </div>
         </div>
 
-        {/* CENTER */}
-        <div className="hidden lg:flex ">
-          <div className="relative w-full">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+        {/* CENTER SECTION */}
+        <div className="hidden lg:flex flex-1 justify-center px-6">
+          <div className="relative w-full max-w-md">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search students, teachers..."
+              placeholder="Search students, teachers, courses…"
               className="pl-9"
             />
           </div>
         </div>
-      </div>
-      {/* RIGHT */}
-      <div className="flex items-center gap-3 float-right">
-        <Button variant="ghost" size="icon">
-          <Bell className="h-5 w-5" />
-        </Button>
-        <ThemeToggle variant="ghost" />
 
-        <ProfileDropdown name={user.name} role={user.role} />
+        {/* RIGHT SECTION */}
+        <div className="flex items-center gap-2 md:gap-3">
+          {/* Mobile Search */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="lg:hidden"
+            aria-label="Search"
+          >
+            <Search className="h-5 w-5" />
+          </Button>
+
+          {/* Notifications */}
+          <Button variant="ghost" size="icon" aria-label="Notifications">
+            <Bell className="h-5 w-5" />
+          </Button>
+
+          {/* Theme Toggle */}
+          <ThemeToggle variant="ghost" />
+
+          {/* Profile */}
+          <ProfileDropdown />
+        </div>
       </div>
     </header>
   );

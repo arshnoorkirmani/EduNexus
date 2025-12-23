@@ -1,75 +1,102 @@
-import ImageKit from "imagekit-javascript";
+import { upload } from "@imagekit/next";
 import type { ImageKitUploadResult } from "@/types/imagekit";
 
 /* -------------------------------------------------------------------------- */
-/* SDK TYPE FIX (isolated, intentional)                                        */
+/* Types                                                                      */
 /* -------------------------------------------------------------------------- */
 
-type RuntimeUploadResponse = {
-  fileId: string;
-  name: string;
-  url: string;
-  thumbnailUrl: string;
-  height?: number;
-  width?: number;
-  size: number;
-  fileType: string;
+// Removed local ImageKitUploadResult in favor of the shared type import
+
+type ImageKitAuthResponse = {
+  signature: string;
+  token: string;
+  expire: number;
 };
 
-type RuntimeUploadOptions = {
-  file: File;
+type UploadParams = {
   fileName: string;
   folder?: string;
-  useUniqueFileName?: boolean;
-  tags?: string[];
+  onProgress?: (progress: number) => void;
+  signal?: AbortSignal;
 };
 
-interface ImageKitClientOptions {
-  publicKey: string;
-  urlEndpoint: string;
-  authenticationEndpoint: string;
-}
-
 /* -------------------------------------------------------------------------- */
-/* ImageKit Client                                                             */
+/* Constants                                                                 */
 /* -------------------------------------------------------------------------- */
 
-const imagekit = new ImageKit({
-  publicKey: process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY!,
-  urlEndpoint: process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT!,
-  authenticationEndpoint: "/api/imagekit-auth",
-} as ImageKitClientOptions);
+const PUBLIC_KEY = process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY!;
+const URL_ENDPOINT = process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT!;
 
 /* -------------------------------------------------------------------------- */
-/* Typed Upload Wrapper (THIS is the key)                                      */
+/* Helpers                                                                   */
 /* -------------------------------------------------------------------------- */
 
-async function sdkUpload(
-  options: RuntimeUploadOptions
-): Promise<RuntimeUploadResponse> {
-  return (await imagekit.upload(
-    options as unknown as any
-  )) as RuntimeUploadResponse;
-}
+async function getImageKitAuth(): Promise<ImageKitAuthResponse> {
+  const res = await fetch("/api/imagekit-auth");
 
-/* -------------------------------------------------------------------------- */
-/* Public API (what your app uses)                                             */
-/* -------------------------------------------------------------------------- */
-
-export async function uploadFileToImageKit(
-  file: File,
-  config?: {
-    folder?: string;
-    tags?: string[];
+  if (!res.ok) {
+    throw new Error("ImageKit auth failed");
   }
-): Promise<ImageKitUploadResult> {
-  const result = await sdkUpload({
-    file,
-    fileName: file.name,
-    folder: config?.folder,
-    tags: config?.tags,
-    useUniqueFileName: true,
-  });
 
-  return result as ImageKitUploadResult;
+  return res.json();
+}
+
+/* -------------------------------------------------------------------------- */
+/* Upload Function                                                           */
+/* -------------------------------------------------------------------------- */
+
+export async function uploadToImageKit(
+  file: File,
+  options: UploadParams
+): Promise<ImageKitUploadResult> {
+  if (!file) {
+    throw new Error("File is required");
+  }
+
+  const auth = await getImageKitAuth();
+
+  // Build payload and cast to any to avoid strict excess property checks
+  const payload: any = {
+    publicKey: PUBLIC_KEY,
+    urlEndpoint: URL_ENDPOINT,
+
+    file,
+    fileName: options.fileName,
+    folder: options.folder,
+
+    signature: auth.signature,
+    token: auth.token,
+    expire: auth.expire,
+
+    abortSignal: options.signal,
+
+    onProgress: (e: ProgressEvent) => {
+      if (!e.total) return;
+      options.onProgress?.(Math.round((e.loaded / e.total) * 100));
+    },
+  };
+
+  const result: any = await upload(payload);
+
+  // Validate required fields
+  if (
+    !result ||
+    !result.fileId ||
+    !result.name ||
+    !result.url ||
+    typeof result.size !== "number" ||
+    !result.fileType
+  ) {
+    throw new Error("Invalid upload response from ImageKit");
+  }
+
+  return {
+    fileId: result.fileId as string,
+    name: result.name as string,
+    url: result.url as string,
+    // ensure thumbnailUrl is always a string to match the shared ImageKitUploadResult type
+    thumbnailUrl: (result.thumbnailUrl ?? "") as string,
+    size: result.size as number,
+    fileType: result.fileType as string,
+  };
 }

@@ -67,9 +67,13 @@ export interface Student extends Document {
   };
 
   academic: {
-    registertionNo: string;
     rollNo: string;
-    timing: Date;
+    timing: {
+      hour: number;
+      minute: number;
+    };
+    registrationNo: string;
+
     admissionDate: Date;
     course?: {
       name: string;
@@ -80,7 +84,7 @@ export interface Student extends Document {
   };
 
   permissions: {
-    super: boolean;
+    superAccess: boolean;
     profile: { show: boolean; edit: boolean };
     communication: { sendMessage: boolean; inboxMessage: boolean };
     fees: { view: boolean; pay: boolean };

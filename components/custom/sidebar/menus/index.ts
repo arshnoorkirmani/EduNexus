@@ -33,3 +33,21 @@ export const checkPathPermission = (
 
   return value === true;
 };
+export function hasMenuPermission({
+  role,
+  institute,
+  itemId,
+}: {
+  role: string;
+  institute: any;
+  itemId: string;
+}): boolean {
+  // Institute → strict permission check
+  if (role === "institute") {
+    return checkPathPermission(institute?.permissions, itemId);
+  }
+
+  // Student / Teacher / User
+  // (menus already define allowed routes)
+  return true;
+}

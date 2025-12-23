@@ -1,11 +1,19 @@
 import ImageKit from "imagekit";
-export const imagekitServer = new ImageKit({
-  publicKey: process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY!,
+import { NextResponse } from "next/server";
+
+export const runtime = "nodejs";
+
+const imagekit = new ImageKit({
+  publicKey: process.env.IMAGEKIT_PUBLIC_KEY!,
   privateKey: process.env.IMAGEKIT_PRIVATE_KEY!,
-  urlEndpoint: process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT!,
+  urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT!,
 });
 
 export async function GET() {
-  const authParams = imagekitServer.getAuthenticationParameters();
-  return Response.json(authParams);
+  const authParams = imagekit.getAuthenticationParameters();
+
+  return NextResponse.json({
+    ...authParams,
+    publicKey: process.env.IMAGEKIT_PUBLIC_KEY!,
+  });
 }

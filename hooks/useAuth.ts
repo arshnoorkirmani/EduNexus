@@ -1,22 +1,58 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useSession } from "next-auth/react";
-
 import { UserType } from "@/types/api/helper/next-auth";
-import { PublicUser } from "@/types/api/helper/public-user";
+import {
+  PublicBaseUser,
+  PublicInstituteUser,
+  PublicStudentUser,
+  PublicTeacherUser,
+} from "@/types/api/helper/public-user";
+
+export interface AuthUser {
+  id: string;
+  name: string;
+  role: UserType;
+  identifier: string;
+  avatar?: string;
+  email?: string;
+}
 
 export function useAuth() {
   const { data: session, status } = useSession();
 
-  const user = session?.user as PublicUser | undefined;
-
-  // Fix: UserType | null is the correct contract
-  const role: UserType | null = user?.role ?? null;
-
-  // State helpers
   const loading = status === "loading";
-  const isLoggedIn = Boolean(user);
+  const isAuthenticated = status === "authenticated";
+
+  const user: AuthUser | null = useMemo(() => {
+    if (!isAuthenticated || !session?.user) return null;
+
+    const base = session.user;
+    let identifier = "unknown";
+
+    if (base.role === "student") {
+      identifier = (base as PublicStudentUser).student_id;
+    } else if (base.role === "teacher") {
+      identifier = (base as PublicTeacherUser).teacher_id;
+    } else {
+      identifier = (base as PublicInstituteUser | PublicBaseUser).email;
+    }
+
+    return {
+      id: base.id,
+      name: base.name,
+      role: base.role,
+      identifier,
+      avatar: base.profile_url ?? undefined,
+      email:
+        base.role === "institute" || base.role === "user"
+          ? (base as PublicInstituteUser | PublicBaseUser).email
+          : undefined,
+    };
+  }, [session, isAuthenticated]);
+
+  const role = user?.role ?? null;
 
   // Role helpers
   const isStudent = role === "student";
@@ -24,28 +60,26 @@ export function useAuth() {
   const isInstitute = role === "institute";
   const isUser = role === "user";
 
-  // Protected role checker
-  const requireRole = useMemo(
-    () => (allowed: UserType[]) => {
-      if (loading) return true; // Don't block until session resolves
-      if (!role) return false; // If no role, not allowed
-      return allowed.includes(role);
-    },
-    [role, loading]
-  );
+  /**
+   * STRICT role checker (for guards)
+   */
+  const hasRole = (allowed: UserType[]) => {
+    if (!isAuthenticated || !role) return false;
+    return allowed.includes(role);
+  };
 
   return {
     user,
     role,
 
     loading,
-    isLoggedIn,
+    isAuthenticated,
 
     isStudent,
     isTeacher,
     isInstitute,
     isUser,
 
-    requireRole,
+    hasRole,
   };
 }
