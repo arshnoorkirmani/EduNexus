@@ -1,23 +1,29 @@
 "use client";
 
-import { createContext, useContext } from "react";
+import { createContext, useContext, useState } from "react";
 import { UseFormReturn, FieldValues } from "react-hook-form";
 
 type AppFormContextType<T extends FieldValues> = {
   form: UseFormReturn<T>;
+  formId: string;
+  isLoading: boolean;
+  setIsLoading: (isLoading: boolean) => void;
 };
 
 const AppFormContext = createContext<AppFormContextType<any> | null>(null);
 
 export function AppFormProvider<T extends FieldValues>({
   form,
+  formId,
   children,
 }: {
   form: UseFormReturn<T>;
+  formId: string;
   children: React.ReactNode;
 }) {
+  const [isLoading, setIsLoading] = useState(false);
   return (
-    <AppFormContext.Provider value={{ form }}>
+    <AppFormContext.Provider value={{ form, formId, isLoading, setIsLoading }}>
       {children}
     </AppFormContext.Provider>
   );

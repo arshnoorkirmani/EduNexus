@@ -5,6 +5,7 @@
 // =============================
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { useSidebar } from "@/components/ui/sidebar";
 import {
   Tooltip,
   TooltipContent,
@@ -48,12 +49,6 @@ type AvatarSize = keyof typeof avatarSizes;
 // =============================
 // HELPERS
 // =============================
-function collapsedClasses(classes: string) {
-  return classes
-    .split(" ")
-    .map((cls) => `group-data-[collapsible=icon]:${cls}`)
-    .join(" ");
-}
 
 // =============================
 // COMPONENT
@@ -77,8 +72,19 @@ export function ProfileAvatar({
   size = "md",
   collapsed,
 }: ProfileAvatarProps) {
-  const normal = avatarSizes[size];
-  const collapsedSize = collapsed ? avatarSizes[collapsed] : null;
+  // Use sidebar state to determine actual size
+  // Default to expanded if used outside sidebar context (optional safety)
+  let isCollapsed = false;
+  try {
+    const { state } = useSidebar();
+    isCollapsed = state === "collapsed";
+  } catch (e) {
+    // Ignore error if not in SidebarProvider
+  }
+
+  // Determine active size key
+  const activeSizeKey = isCollapsed && collapsed ? collapsed : size;
+  const config = avatarSizes[activeSizeKey];
 
   const showRoleBadge = Boolean(Icon);
   const showStatusDot = isBadge && !Icon;
@@ -89,8 +95,7 @@ export function ProfileAvatar({
       <Avatar
         className={cn(
           "border border-white/20 shadow-md transition-all",
-          normal.avatar,
-          collapsedSize && collapsedClasses(collapsedSize.avatar)
+          config.avatar
         )}
       >
         <AvatarImage src={profileUrl} alt={name} />
@@ -105,21 +110,13 @@ export function ProfileAvatar({
           className={cn(
             "absolute z-10 flex items-center justify-center rounded-full",
             "bg-black/70 backdrop-blur border border-white/20",
-            normal.roleBadge,
-            normal.offsetRole,
-            collapsedSize && collapsedClasses(collapsedSize.roleBadge),
-            collapsedSize && collapsedClasses(collapsedSize.offsetRole)
+            config.roleBadge,
+            config.offsetRole
           )}
         >
           <Tooltip>
             <TooltipTrigger asChild>
-              <Icon
-                className={cn(
-                  normal.icon,
-                  "text-white/80",
-                  collapsedSize && collapsedClasses(collapsedSize.icon)
-                )}
-              />
+              <Icon className={cn(config.icon, "text-white/80")} />
             </TooltipTrigger>
 
             {label && <TooltipContent side="top">{label}</TooltipContent>}
@@ -133,10 +130,8 @@ export function ProfileAvatar({
           aria-label="Online"
           className={cn(
             "absolute z-10 rounded-full bg-green-500 p-0",
-            normal.status,
-            normal.offsetStatus,
-            collapsedSize && collapsedClasses(collapsedSize.status),
-            collapsedSize && collapsedClasses(collapsedSize.offsetStatus)
+            config.status,
+            config.offsetStatus
           )}
         />
       )}

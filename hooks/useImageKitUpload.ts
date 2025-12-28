@@ -1,6 +1,6 @@
 import { uploadToImageKit } from "@/helper/imagekit.client";
 import { ImageKitUploadResult } from "@/types/imagekit";
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 // import { uploadToImageKit } from "@/lib/imagekit/upload";
 
 export type UploadStatus =
@@ -19,19 +19,57 @@ export type UploadItem = {
   error?: string;
   result?: ImageKitUploadResult;
   controller?: AbortController;
+  previewUrl?: string;
 };
+function normalizeUploadError(error: unknown): string {
+  if (error instanceof DOMException && error.name === "AbortError") {
+    return "Upload cancelled";
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return "Unexpected upload error";
+}
+
 export function useImageKitUpload() {
   const [uploads, setUploads] = useState<Record<string, UploadItem>>({});
+
   /* -------------------------------------------------------------------------- */
   /* Helpers                                                                    */
   /* -------------------------------------------------------------------------- */
 
-  const update = (id: string, patch: Partial<UploadItem>) => {
-    setUploads((prev) => ({
-      ...prev,
-      [id]: { ...prev[id], ...patch },
-    }));
-  };
+  const update = useCallback((id: string, patch: Partial<UploadItem>) => {
+    setUploads((prev) => {
+      if (!prev[id]) return prev;
+      return {
+        ...prev,
+        [id]: { ...prev[id], ...patch },
+      };
+    });
+  }, []);
+
+  const generateId = () =>
+    crypto.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
+
+  /* -------------------------------------------------------------------------- */
+  /* Lifecycle Cleanup                                                          */
+  /* -------------------------------------------------------------------------- */
+
+  // Cleanup object URLs on unmount
+  useEffect(() => {
+    return () => {
+      setUploads((prev) => {
+        Object.values(prev).forEach((item) => {
+          if (item.previewUrl) {
+            URL.revokeObjectURL(item.previewUrl);
+          }
+        });
+        return {};
+      });
+    };
+  }, []);
 
   /* -------------------------------------------------------------------------- */
   /* Upload                                                                     */
@@ -39,8 +77,9 @@ export function useImageKitUpload() {
 
   const startUpload = useCallback(
     async (file: File, fileName?: string, folder?: string) => {
-      const id = Date.now().toString();
+      const id = generateId();
       const controller = new AbortController();
+      const previewUrl = URL.createObjectURL(file);
 
       setUploads((prev) => ({
         ...prev,
@@ -51,12 +90,13 @@ export function useImageKitUpload() {
           progress: 0,
           status: "uploading",
           controller,
+          previewUrl,
         },
       }));
 
       try {
         const result = await uploadToImageKit(file, {
-          fileName: fileName || file.name,
+          fileName: fileName ?? file.name,
           folder,
           signal: controller.signal,
           onProgress: (progress) => update(id, { progress }),
@@ -69,45 +109,70 @@ export function useImageKitUpload() {
         });
 
         return result;
-      } catch (err: any) {
-        if (err?.name === "AbortError") {
-          update(id, { status: "cancelled" });
-        } else {
-          update(id, {
-            status: "error",
-            error: err?.message || "Upload failed",
-          });
-        }
+      } catch (error) {
+        const message = normalizeUploadError(error);
+
+        update(id, {
+          status:
+            error instanceof DOMException && error.name === "AbortError"
+              ? "cancelled"
+              : "error",
+          error: message,
+        });
+
+        // 🔴 Important: allow caller to react
+        throw error;
       }
     },
-    []
+    [update]
   );
 
   /* -------------------------------------------------------------------------- */
   /* Controls                                                                   */
   /* -------------------------------------------------------------------------- */
 
-  const retry = (id: string, folder?: string) => {
-    const item = uploads[id];
-    if (!item) return;
-    // pass folder as the third argument; the second arg is fileName
-    startUpload(item.file, item?.fileName, folder);
-  };
+  const retry = useCallback(
+    (id: string, folder?: string) => {
+      setUploads((prev) => {
+        const item = prev[id];
+        if (!item) return prev;
 
-  const cancel = (id: string) => {
-    uploads[id]?.controller?.abort();
-  };
+        startUpload(item.file, item.fileName, folder);
+        return prev;
+      });
+    },
+    [startUpload]
+  );
 
-  const clear = (id: string) => {
+  const cancel = useCallback((id: string) => {
+    setUploads((prev) => {
+      prev[id]?.controller?.abort();
+      return prev;
+    });
+  }, []);
+
+  const clear = useCallback((id: string) => {
     setUploads((prev) => {
       const copy = { ...prev };
+      const item = copy[id];
+      if (item?.previewUrl) {
+        URL.revokeObjectURL(item.previewUrl);
+      }
       delete copy[id];
       return copy;
     });
-  };
-  const clearAll = () => {
-    Object.keys(uploads).forEach((id) => clear(id));
-  };
+  }, []);
+
+  const clearAll = useCallback(() => {
+    setUploads((prev) => {
+      Object.values(prev).forEach((item) => {
+        if (item.previewUrl) {
+          URL.revokeObjectURL(item.previewUrl);
+        }
+      });
+      return {};
+    });
+  }, []);
 
   return {
     uploads,

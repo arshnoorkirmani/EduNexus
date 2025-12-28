@@ -8,6 +8,7 @@ import AutoBreadcrumb from "./autoBreadcrumb";
 import { ProfileDropdown } from "./ProfileMenu";
 import { ThemeToggle } from "../../utils/theme-toggle";
 import { UserType } from "@/types/api/helper/next-auth";
+import { useAuth } from "@/hooks/useAuth";
 
 interface User {
   name: string;
@@ -17,11 +18,7 @@ interface User {
 
 export function AppHeader() {
   // 🔐 Replace with session/auth later
-  const user: User = {
-    name: "Arshnoor",
-    role: "institute",
-    organization: "Hope Group of Institutes",
-  };
+  const { user } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur">
@@ -33,7 +30,9 @@ export function AppHeader() {
           {/* Brand & Context */}
           <div className="hidden md:flex flex-col">
             <span className="text-sm font-semibold text-foreground">
-              {user.organization ?? "Dashboard"}
+              {user?.institute_code
+                ? user?.institute_name + " (" + user?.institute_code + ")"
+                : "Dashboard"}
             </span>
             <AutoBreadcrumb />
           </div>

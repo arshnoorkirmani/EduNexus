@@ -3,7 +3,10 @@ import {
   InstituteSlice,
   InstituteInformation,
 } from "@/types/models/institute.slice";
-import { fetchInstitute } from "../thunks/institute.thunks";
+import {
+  fetchInstitute,
+  fetchInstituteCourses,
+} from "../thunks/institute.thunks";
 import { InstitutePermissions } from "@/types/models/institute.model";
 // ======================================================
 // INITIAL INSTITUTE INFORMATION
@@ -321,11 +324,8 @@ export const instituteSlice = createSlice({
     // -----------------------------
     builder.addCase(fetchInstitute.fulfilled, (state, action) => {
       state.loading = false;
-      console.log("action.payload", action.payload);
       // merge returned data into Redux state
       Object.assign(state, action.payload);
-
-      console.log("→ Institute value set!", action.payload); //remove
     });
 
     // -----------------------------
@@ -333,7 +333,27 @@ export const instituteSlice = createSlice({
     // -----------------------------
     builder.addCase(fetchInstitute.rejected, (state, action) => {
       state.loading = false;
-      state.error = action.payload as string;
+      state.error = action.payload ?? {
+        code: "UNKNOWN_ERROR",
+        message: "Something went wrong",
+      };
+    });
+
+    // -----------------------------
+    // FETCH COURSES
+    // -----------------------------
+    builder.addCase(fetchInstituteCourses.pending, (state) => {
+      state.academics.loading = true;
+      state.academics.error = null;
+    });
+    builder.addCase(fetchInstituteCourses.fulfilled, (state, action) => {
+      state.academics.loading = false;
+      state.academics.courses = action.payload; // Store in academics.courses
+    });
+    builder.addCase(fetchInstituteCourses.rejected, (state, action) => {
+      state.academics.loading = false;
+      state.academics.error =
+        action.payload?.message || "Failed to fetch courses";
     });
   },
 });

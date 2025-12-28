@@ -79,16 +79,6 @@ export default function ReadySidebar() {
     // ------------------------------
     // GLOBAL FALLBACK (loading/error)
     // ------------------------------
-    console.log(
-      "Sidebar",
-      role,
-      institute.loading,
-      institute.error
-      // student.loading,
-      // student.error,
-      // teacher.loading,
-      // teacher.error
-    );
     if (
       institute?.loading ||
       institute?.error
@@ -164,7 +154,6 @@ export default function ReadySidebar() {
     };
   }, [role, institute, student, teacher, user]);
 
-  console.log({ institute }); //remove
   useEffect(() => {
     if (!institute.status) return;
 
@@ -199,7 +188,6 @@ export default function ReadySidebar() {
       .filter((section) => section.items.length > 0);
   }, [role, institute.permissions]);
 
-  // console.log("filteredMenus", filteredMenus);
   // ==============================================
   if (institute.loading) {
     return (

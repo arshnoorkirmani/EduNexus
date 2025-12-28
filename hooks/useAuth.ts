@@ -3,12 +3,7 @@
 import { useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { UserType } from "@/types/api/helper/next-auth";
-import {
-  PublicBaseUser,
-  PublicInstituteUser,
-  PublicStudentUser,
-  PublicTeacherUser,
-} from "@/types/api/helper/public-user";
+import { PublicUser } from "@/types/api/helper/public-user";
 
 export interface AuthUser {
   id: string;
@@ -17,6 +12,24 @@ export interface AuthUser {
   identifier: string;
   avatar?: string;
   email?: string;
+  isVerified: boolean;
+  institute_name: string;
+  institute_code: string;
+  isNew: boolean;
+}
+
+function getIdentifier(user: PublicUser): string {
+  switch (user.role) {
+    case "student":
+      return user.student_id;
+    case "teacher":
+      return user.teacher_id;
+    case "institute":
+    case "user":
+      return user.email;
+    default:
+      return "unknown";
+  }
 }
 
 export function useAuth() {
@@ -25,49 +38,31 @@ export function useAuth() {
   const loading = status === "loading";
   const isAuthenticated = status === "authenticated";
 
-  const user: AuthUser | null = useMemo(() => {
+  const user = useMemo<AuthUser | null>(() => {
     if (!isAuthenticated || !session?.user) return null;
 
     const base = session.user;
-    let identifier = "unknown";
-
-    if (base.role === "student") {
-      identifier = (base as PublicStudentUser).student_id;
-    } else if (base.role === "teacher") {
-      identifier = (base as PublicTeacherUser).teacher_id;
-    } else {
-      identifier = (base as PublicInstituteUser | PublicBaseUser).email;
-    }
-
     return {
       id: base.id,
       name: base.name,
       role: base.role,
-      identifier,
+      identifier: getIdentifier(base),
       avatar: base.profile_url ?? undefined,
+      institute_name: base.institute_name,
+      institute_code: base.institute_code,
       email:
-        base.role === "institute" || base.role === "user"
-          ? (base as PublicInstituteUser | PublicBaseUser).email
+        base.role === "user" || base.role === "institute"
+          ? base.email
           : undefined,
+      isVerified: base.isVerified,
+      isNew: base.isNew,
     };
-  }, [session, isAuthenticated]);
+  }, [isAuthenticated, session]);
 
   const role = user?.role ?? null;
 
-  // Role helpers
-  const isStudent = role === "student";
-  const isTeacher = role === "teacher";
-  const isInstitute = role === "institute";
-  const isUser = role === "user";
-
-  /**
-   * STRICT role checker (for guards)
-   */
-  const hasRole = (allowed: UserType[]) => {
-    if (!isAuthenticated || !role) return false;
-    return allowed.includes(role);
-  };
-
+  const hasRole = (allowed: readonly UserType[]) =>
+    !!role && allowed.includes(role);
   return {
     user,
     role,
@@ -75,10 +70,10 @@ export function useAuth() {
     loading,
     isAuthenticated,
 
-    isStudent,
-    isTeacher,
-    isInstitute,
-    isUser,
+    isStudent: role === "student",
+    isTeacher: role === "teacher",
+    isInstitute: role === "institute",
+    isUser: role === "user",
 
     hasRole,
   };

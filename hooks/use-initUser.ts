@@ -8,23 +8,18 @@ import { promiseToast } from "@/components/custom/utils/Toast";
 
 export function useInitUser() {
   const dispatch = useAppDispatch();
-  const { user, role, loading, isLoggedIn } = useAuth();
+  const { user, role, loading, isAuthenticated } = useAuth();
 
   useEffect(() => {
     if (loading) return;
     if (!user) return;
 
-    console.log("User Session →", user); //remove
-    console.log("User Role →", role); //remove
-
     if (role === "institute") {
-      console.log("Fetching institute data…"); //remove
-
       promiseToast(dispatch(fetchInstitute(user.id)).unwrap(), {
         loading: "Fetching institute data…",
         success: "Institute data fetched successfully",
         error: (err) => err?.message || "Error fetching institute data",
       });
     }
-  }, [user, role, loading, isLoggedIn]);
+  }, [user, role, loading, isAuthenticated]);
 }

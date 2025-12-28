@@ -100,6 +100,7 @@ export const DateInput = React.forwardRef<HTMLButtonElement, DateInputProps>(
             selected={value}
             onSelect={onChange}
             initialFocus
+            captionLayout="dropdown"
           />
         </PopoverContent>
       </Popover>

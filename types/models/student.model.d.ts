@@ -23,7 +23,7 @@ export type StudentDocument = {
     verifiedBy?: string;
   };
 
-  visibility?: "institute" | "user" | "student";
+  visibility?: "institute" | "user" | "student" | "public";
 };
 
 export interface Student extends Document {
@@ -42,9 +42,9 @@ export interface Student extends Document {
 
   institute: {
     instituteId: Schema.Types.ObjectId;
-    instituteCode: string;
-    instituteLogo: string;
-    instituteName: string;
+    institute_code: string;
+    institute_logo: string;
+    institute_name: string;
   };
 
   personal: {

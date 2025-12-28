@@ -20,7 +20,7 @@ export default function AddStudentPage() {
     ) as unknown as Resolver<StudentFormData>,
     defaultValues: {
       auth: {
-        studentId: "",
+        studentId: "SCC0019-0070",
         password: "12345678",
         role: "student",
         // Ensure verify booleans are present and typed correctly
@@ -30,35 +30,35 @@ export default function AddStudentPage() {
         },
       },
       institute: {
-        instituteId: "INST001",
-        instituteCode: "IMS",
-        instituteName: "Institute Management System",
+        instituteId: "SCC0019-0070",
+        instituteCode: "SCC0019-0070",
+        instituteName: "S.K. Jansewa Kendra",
       },
       personal: {
-        firstName: "Arshnoor ",
-        lastName: "Kirmani",
-        fullName: "",
+        firstName: "Arshnoor",
+        lastName: "Singh",
+        fullName: "Arshnoor Singh",
         gender: "male",
         dob: new Date(),
-        mobile: "7236044212",
-        email: "try.arshnoorkirmani@gmail.com",
-        fatherName: "Father Name",
-        motherName: "Mother Name",
+        mobile: "+919876543210",
+        email: "arshnoor.singh@example.com",
+        fatherName: "John Doe",
+        motherName: "Jane Doe",
         address: {
-          fullAddress: "",
-          line: "12, XYZ Street",
-          city: "Lakhimpur-Kheri",
-          state: "Uttar Pradesh",
-          pincode: "234567",
-          country: "India",
+          fullAddress: "123 Main St, Anytown, USA",
+          line: "123 Main St",
+          city: "Anytown",
+          state: "Anytown",
+          pincode: "123456",
+          country: "USA",
         },
       },
       academic: {
-        registrationNo: "12345678",
-        rollNo: "HS-1234",
-        timing: "09:30",
+        registrationNo: "SCC0019-0070",
+        rollNo: "SCC0019-0070",
+        timing: "09:00",
         admissionDate: new Date(),
-        course: { name: "BCA", courseTitle: "bca" },
+        course: { name: "B.Sc Physics", course_code: "BSC_PHY" },
       },
       permissions: {
         superAccess: false,
@@ -82,7 +82,7 @@ export default function AddStudentPage() {
     },
   });
   return (
-    <AppFormProvider<StudentFormData> form={form}>
+    <AppFormProvider<StudentFormData> form={form} formId="add-student-form">
       <HeaderContainer
         title="Add New Student"
         description="Create and configure a new student profile."

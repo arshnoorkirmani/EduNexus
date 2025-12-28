@@ -65,7 +65,6 @@ export function SidebarUserFooter() {
   // ---------------- SYNC USERS LIST ----------------
   useEffect(() => {
     if (!activeUser) return;
-    console.log("activeUser", activeUser, session); //remove
     setUsers([activeUser]);
   }, [activeUser]);
 
@@ -74,7 +73,6 @@ export function SidebarUserFooter() {
   // ---------------- HANDLERS ----------------
   const handleSwitchUser = (u: User) => {
     // localStorage.setItem("active_user", JSON.stringify(u));
-    console.log(u); //remove
   };
 
   const handleLogout = () => {

@@ -13,6 +13,8 @@ export interface Teacher extends Document {
 
   institute: {
     instituteId: Schema.Types.ObjectId;
+    institute_name: string;
+    institute_code: string;
   };
 
   personal: {

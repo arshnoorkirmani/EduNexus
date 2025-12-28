@@ -1,9 +1,15 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
-import { useForm, UseFormReturn } from "react-hook-form";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { UseFormReturn, useWatch } from "react-hook-form";
+import { apiClient } from "@/helper/ApiClient";
+
+import { useAppForm } from "../FormContext";
+import { useAuth } from "@/hooks/useAuth";
+import { FormActions } from "./StudentFormActions";
 
 import { Form } from "@/components/ui/form";
+import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -23,65 +29,247 @@ import {
 import { Field } from "@/components/custom/form/input/FormField";
 import { SearchableSelectField } from "@/components/ui/curstom-program-selecter";
 
-import {
-  StudentFormData,
-  studentFormSchema,
-} from "@/lib/validators/institute/add-student.validator";
+import { StudentFormData } from "@/lib/validators/institute/add-student.validator";
 import { DocumentUploadCard } from "@/components/custom/form/student/DoucmentUploadCard";
 import { cn } from "@/lib/utils";
+import { studentService } from "@/config/Student.service";
+import { useAppDispatch, useAppSelector } from "@/store";
+import axios from "axios";
+import { fetchInstituteCourses } from "@/store/thunks/institute.thunks";
+import { InstituteConf } from "@/config/InstituteClient";
+import { promiseToast } from "../../utils/Toast";
+const dobToPassword = (dob: string | Date) => {
+  const date = new Date(dob);
+  if (isNaN(date.getTime())) return "";
 
-const generateStudentId = () =>
-  `STU${Math.floor(100000 + Math.random() * 900000)}`;
+  const dd = String(date.getDate()).padStart(2, "0");
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const yyyy = date.getFullYear();
 
-const COURSE_GROUPS = [
-  {
-    title: "Science",
-    courses: [
-      { label: "B.Sc Physics", value: "bsc-physics" },
-      { label: "B.Sc Chemistry", value: "bsc-chemistry" },
-    ],
-  },
-  {
-    title: "Computer",
-    courses: [
-      { label: "BCA", value: "bca" },
-      { label: "MCA", value: "mca" },
-    ],
-  },
-];
+  return `${dd}${mm}${yyyy}`;
+};
 
 export default function AddStudentPage() {
-  const { form } = useAppForm<StudentFormData>();
+  const [courses, setCourses] = useState<any[]>([]);
+  const [courseLoading, setCourseLoading] = useState(true);
+  const { form, formId, setIsLoading, isLoading } =
+    useAppForm<StudentFormData>();
+  const hasGeneratedRef = useRef(false);
+  const dispatch = useAppDispatch();
+  const institute = useAppSelector((state) => state.institute);
+  const { user } = useAuth();
 
+  /* ================================================= */
   /* ================= DERIVED STATE ================= */
+  /* ================================================= */
+  const DOB = useWatch({
+    control: form.control,
+    name: "personal.dob",
+  });
 
-  const firstName = form.watch("personal.firstName");
-  const lastName = form.watch("personal.lastName");
-  const address = form.watch("personal.address");
-  const totalFees = form.watch("fees.totalFees");
-  const paidFees = form.watch("fees.paidFees");
-  const fullName = useMemo(() => {
-    const name = [firstName, lastName].filter(Boolean).join(" ");
-    form.setValue("personal.fullName", name, { shouldDirty: false });
-    return name;
-  }, [firstName, lastName, form]);
+  //First Name and Last Name Watch
+  const [firstName, lastName] = useWatch({
+    control: form.control,
+    name: ["personal.firstName", "personal.lastName"],
+  });
+
+  //Address Watch
+  const [
+    addressLine,
+    addressCity,
+    addressState,
+    addressPincode,
+    addressCountry,
+  ] = useWatch({
+    control: form.control,
+    name: [
+      "personal.address.line",
+      "personal.address.city",
+      "personal.address.state",
+      "personal.address.pincode",
+      "personal.address.country",
+    ],
+  });
+
+  //Fees Watch
+  const [totalFees, paidFees] = useWatch({
+    control: form.control,
+    name: ["fees.totalFees", "fees.paidFees"],
+  });
+  //Course Watch
+  const course = useWatch({
+    control: form.control,
+    name: "academic.course",
+  });
+  //FullName Memo
+  const fullName = useMemo(
+    () => [firstName, lastName].filter(Boolean).join(" "),
+    [firstName, lastName]
+  );
 
   /* ================= EFFECTS ================= */
-
-  // Auto Student ID
+  // Password accoding to DOB
   useEffect(() => {
-    if (!form.getValues("auth.studentId")) {
-      form.setValue("auth.studentId", generateStudentId());
+    if (!DOB) return;
+    const password = dobToPassword(DOB);
+    form.setValue("auth.password", password, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+  }, [DOB, form]);
+
+  useEffect(() => {
+    if (institute.loading) return;
+    const code = institute.information.institute_code;
+
+    if (!code) return;
+
+    setCourseLoading(true);
+    dispatch(fetchInstituteCourses({ params: { institute_code: code } }))
+      .unwrap()
+      .then((res) => {
+        // Transform and Group Courses
+        const grouped = res.reduce((acc: any[], item: any) => {
+          let group = acc.find((g) => g.title === item.category);
+
+          const option = {
+            label: `${item.course_name} (${item.course_code})`,
+            value: item.course_code.toLowerCase(), // This acts as the selection ID
+
+            // Extra data for form population
+            courseName: item.course_name,
+            course_code: item.course_code,
+            groupTitle: item.category,
+            baseFee: item.fees?.total || 0,
+            level: item.duration?.unit === "year" ? "degree" : "skill",
+          };
+
+          if (group) {
+            group.options.push(option);
+          } else {
+            acc.push({
+              title: item.category,
+              options: [option],
+            });
+          }
+
+          return acc;
+        }, []);
+
+        setCourses(grouped);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch courses:", err);
+        promiseToast(Promise.reject(err), {
+          loading: "Fetching courses...",
+          success: "Courses loaded",
+          error: "Failed to load courses",
+        });
+      })
+      .finally(() => {
+        setCourseLoading(false);
+      });
+  }, [institute.loading, institute.information.institute_code, dispatch]);
+
+  // Watch for Course Selection Changes
+  const selectedCourseValue = useWatch({
+    control: form.control,
+    name: "academic.course.name",
+  });
+
+  useEffect(() => {
+    if (institute.academics.loading) return;
+    if (!selectedCourseValue || courses.length === 0) return;
+
+    // Flatten options to find the selected one
+    const allOptions = courses.flatMap((g) => g.options);
+    const selectedOption = allOptions.find(
+      (opt) => opt.value === selectedCourseValue
+    );
+    (async () => {
+      if (!institute.information.institute_code) return;
+      const rollNo = await studentService.generateRollNo(
+        institute.information.institute_code,
+        selectedOption.course_code
+      );
+      form.setValue("academic.rollNo", rollNo ? rollNo : "");
+    })();
+    if (selectedOption) {
+      // 1. Populate full course details
+      form.setValue("academic.course.course_code", selectedOption.course_code);
+      form.setValue("academic.course.groupTitle", selectedOption.groupTitle);
+      form.setValue("academic.course.baseFee", selectedOption.baseFee);
+      const currentTotal = form.getValues("fees.totalFees");
+      form.setValue("fees.totalFees", selectedOption.baseFee);
+      form.setValue("fees.remainingFees", selectedOption.baseFee);
+      form.setValue("fees.paidFees", 0);
+      form.setValue("fees.status", "pending");
     }
-  }, [form]);
+  }, [selectedCourseValue, courses, form]);
+
+  //FullName Effect
+  useEffect(() => {
+    form.setValue("personal.fullName", fullName, { shouldDirty: false });
+  }, [fullName, form]);
+  //Auto Generate Student ID and Registration No
+  useEffect(() => {
+    if (institute.loading) return;
+
+    if (!user?.institute_code) return;
+    if (hasGeneratedRef.current) return;
+
+    const generate = async () => {
+      try {
+        const [studentId, registrationNo] = await Promise.all([
+          studentService.generateStudentId(user.institute_code),
+          studentService.generateRegistrationNo(user.institute_code),
+        ]);
+        if (studentId) {
+          console.log("studentId", studentId);
+          form.setValue("auth.studentId", studentId, { shouldDirty: false });
+        }
+
+        if (registrationNo) {
+          console.log("registrationNo", registrationNo);
+          form.setValue("academic.registrationNo", registrationNo, {
+            shouldDirty: false,
+          });
+        }
+
+        form.setValue(
+          "institute.instituteCode",
+          institute?.information?.institute_code ?? "",
+          {
+            shouldDirty: false,
+          }
+        );
+        form.setValue("institute.instituteId", institute?.id ?? "", {
+          shouldDirty: false,
+        });
+        form.setValue(
+          "institute.instituteName",
+          institute?.information.institute_name ?? "",
+          {
+            shouldDirty: false,
+          }
+        );
+
+        hasGeneratedRef.current = true;
+      } catch (error) {
+        console.error("Auto-generate failed:", error);
+      }
+    };
+
+    generate();
+  }, [institute.loading]);
   // Full Address
   useEffect(() => {
     const fullAddress = [
-      address.line,
-      address.city,
-      address.state,
-      address.pincode,
-      address.country,
+      addressLine,
+      addressCity,
+      addressState,
+      addressPincode,
+      addressCountry,
     ]
       .filter(Boolean)
       .join(", ");
@@ -89,13 +277,20 @@ export default function AddStudentPage() {
     form.setValue("personal.address.fullAddress", fullAddress, {
       shouldDirty: false,
     });
-  }, [address, form]);
+  }, [
+    addressLine,
+    addressCity,
+    addressState,
+    addressPincode,
+    addressCountry,
+    form,
+  ]);
 
   // Fees Calculation
   useEffect(() => {
     const total = Number(totalFees) || 0;
     const paid = Math.min(Number(paidFees) || 0, total);
-    const remaining = Math.max(total - paid, 0);
+    const remaining = total - paid;
 
     form.setValue("fees.remainingFees", remaining, { shouldDirty: false });
     form.setValue(
@@ -106,28 +301,31 @@ export default function AddStudentPage() {
   }, [totalFees, paidFees, form]);
 
   const onSubmit = (data: StudentFormData) => {
-    const documents = (data.documents || []).map((doc: any) => ({
-      type: doc.documentType || doc.type,
-      name: doc.name || doc.file?.name,
-      url: doc.url || "", // ImageKit URL later (blob URL present while uploading)
-      size: doc.size || doc.file?.size,
-      mimeType: doc.mimeType || doc.file?.type,
-      status: doc.status || "uploaded",
-    }));
+    const documents = data.documents || [];
 
     const payload = {
       ...data,
       documents,
     };
-
+    setIsLoading(true);
     console.log("STUDENT_PAYLOAD", payload);
+    const time = setTimeout(() => {
+      setIsLoading(false);
+    }, 5000);
   };
 
   return (
     <Form {...form}>
       <form
-        id="add-student-form"
-        onSubmit={form.handleSubmit(onSubmit)}
+        id={formId}
+        onSubmit={form.handleSubmit(onSubmit, (errors) => {
+          console.error("Form Validation Errors:", errors);
+          promiseToast(Promise.reject("Validation Failed"), {
+            loading: "Validating...",
+            success: "",
+            error: "Please check the form for errors",
+          });
+        })}
         className="space-y-4"
       >
         {/* ================= AUTH ================= */}
@@ -141,6 +339,7 @@ export default function AddStudentPage() {
             label="Student ID"
             placeholder="Auto-generated student ID"
             required
+            disabled
           />
           <Field
             form={form}
@@ -183,6 +382,7 @@ export default function AddStudentPage() {
             name="personal.fullName"
             label="Full Name"
             placeholder="Auto-filled full name"
+            disabled
           />
 
           <Field
@@ -225,7 +425,11 @@ export default function AddStudentPage() {
             render={({ field }) => (
               <FormItem className="space-y-1.5">
                 <FormLabel>Gender</FormLabel>
-                <Select value={field.value} onValueChange={field.onChange}>
+                <Select
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  disabled={isLoading}
+                >
                   <FormControl className="py-0 my-0">
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select gender" />
@@ -288,6 +492,7 @@ export default function AddStudentPage() {
             label="Full Address"
             placeholder="House no, street, area, city, state, pincode"
             parentClassName="col-span-4"
+            disabled
           />
         </Section>
 
@@ -301,12 +506,14 @@ export default function AddStudentPage() {
             name="academic.registrationNo"
             label="Registration No"
             placeholder="Registration number"
+            disabled
           />
           <Field
             form={form}
             name="academic.rollNo"
             label="Roll No"
-            placeholder="Roll number"
+            placeholder="Auto-generated roll number (according to course)"
+            disabled
           />
 
           <SearchableSelectField
@@ -314,7 +521,8 @@ export default function AddStudentPage() {
             name="academic.course.name"
             label="Course"
             placeholder="Select course"
-            groups={COURSE_GROUPS}
+            groups={courses}
+            loading={courseLoading}
           />
 
           <Field
@@ -367,6 +575,25 @@ export default function AddStudentPage() {
           description="Upload and manage student documents such as Aadhaar, marksheets, certificates, and profile photos."
         >
           <DocumentUploadCard form={form} />
+        </Section>
+        <Section
+          title="Account Verification"
+          cols={2}
+          description="Manage student verification status and portal access permissions."
+        >
+          <PermissionItem
+            form={form}
+            label="Verified Student"
+            name="auth.verify.isVerified"
+            description="Mark this student as verified by the institute."
+          />
+
+          <PermissionItem
+            form={form}
+            label="Login Access"
+            name="auth.verify.isLoginEnabled"
+            description="Allow the student to log in to the portal."
+          />
         </Section>
         <Section
           cols={1}
@@ -495,9 +722,16 @@ type PermissionItemProps = {
   form: UseFormReturn<any>;
   name: string;
   label: string;
+  description?: string;
 };
 
-function PermissionItem({ form, name, label }: PermissionItemProps) {
+function PermissionItem({
+  form,
+  name,
+  label,
+  description,
+}: PermissionItemProps) {
+  const { isLoading } = useAppForm<StudentFormData>();
   return (
     <FormField
       control={form.control}
@@ -522,7 +756,7 @@ function PermissionItem({ form, name, label }: PermissionItemProps) {
             >
               <p className="text-sm font-medium">{label}</p>
               <p className="text-xs text-muted-foreground">
-                Allow student to {label.toLowerCase()}
+                {description || `Allow student to ${label.toLowerCase()}`}
               </p>
             </FormLabel>
 
@@ -530,6 +764,7 @@ function PermissionItem({ form, name, label }: PermissionItemProps) {
             <FormControl>
               <Switch
                 id={switchId}
+                disabled={isLoading}
                 checked={Boolean(field.value)}
                 onCheckedChange={field.onChange}
               />
@@ -540,17 +775,6 @@ function PermissionItem({ form, name, label }: PermissionItemProps) {
     />
   );
 }
-
-// type Props = {
-//   form: UseFormReturn<any>;
-// };
-
-import { useWatch } from "react-hook-form";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { useAppForm } from "../FormContext";
-import { FormActions } from "./StudentFormActions";
-
 export function StudentPermissionSection({ form }: Props) {
   const superAccess = useWatch({
     control: form.control,
@@ -562,11 +786,11 @@ export function StudentPermissionSection({ form }: Props) {
       {/* 🔐 Full Access */}
       <div
         className="
-            flex items-center justify-between
-            rounded-xl border
-            bg-muted/40
-            px-5 py-4
-          "
+              flex items-center justify-between
+              rounded-xl border
+              bg-muted/40
+              px-5 py-4
+            "
       >
         <div className="space-y-1">
           <p className="text-sm font-medium">Full Access</p>
@@ -590,11 +814,11 @@ export function StudentPermissionSection({ form }: Props) {
             <section
               key={group.title}
               className="
-    rounded-xl border
-    bg-muted/30
-    p-5
-    space-y-4
-  "
+      rounded-xl border
+      bg-muted/30
+      p-5
+      space-y-4
+    "
             >
               <div className="flex items-center justify-between">
                 <h4 className="text-sm font-semibold tracking-wide">

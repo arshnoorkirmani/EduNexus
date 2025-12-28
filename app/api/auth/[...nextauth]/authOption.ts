@@ -4,87 +4,11 @@ import bcrypt from "bcryptjs";
 import dbConnect from "@/lib/DatabaseConnection";
 import { User as AuthUser } from "next-auth";
 import { saveLoginActivity } from "@/lib/saveLoginActivity";
-import { Institute } from "@/types/models/institute.model";
-import { Student } from "@/types/models/student.model";
-import { Teacher } from "@/types/models/teacher.model";
-import { User } from "@/types/models/user.model";
 import InstituteModel from "@/models/InstituteSchema";
-import { PublicUser } from "@/types/api/helper/public-user";
-import { UserType } from "@/types/api/helper/next-auth";
 import { TeacherModel } from "@/models/TeacherSchema";
 import { StudentModel } from "@/models/StudentsSchema";
-// Utility: limit returned user fields
-export const publicUser = (
-  user: Institute | Student | Teacher | User,
-  role: UserType
-): PublicUser => {
-  const extractProfileUrl = (): string | null => {
-    switch (role) {
-      case "institute":
-        return (user as Institute).information?.profile_url ?? null;
-
-      case "student":
-        return (user as Student).documents?.profilePhoto?.url ?? null;
-
-      case "teacher":
-        return (user as Teacher).documents?.profilePhoto ?? null;
-
-      default:
-        return null;
-    }
-  };
-
-  const base = {
-    id: String(user._id),
-
-    name:
-      role === "institute"
-        ? (user as Institute).username ?? "Institute"
-        : role === "student"
-        ? (user as Student).personal?.fullName ?? "Student"
-        : (user as Teacher).personal?.name ?? "Teacher",
-
-    profile_url: extractProfileUrl(),
-
-    logo:
-      role === "institute"
-        ? (user as Institute).information?.logo ?? null
-        : null,
-
-    isVerified:
-      (user as Institute)?.isVerified ??
-      (user as Student | Teacher | User)?.auth?.verify?.isVerified ??
-      false,
-
-    isNew: false,
-  };
-
-  if (role === "student") {
-    return {
-      ...base,
-      role: "student",
-      student_id: (user as Student).auth.studentId,
-      logo: null,
-    };
-  }
-
-  if (role === "teacher") {
-    return {
-      ...base,
-      role: "teacher",
-      teacher_id: (user as Teacher).auth.teacherId,
-      logo: null,
-    };
-  }
-
-  return {
-    ...base,
-    role: "institute",
-    email: (user as Institute).email,
-    isNew: !(user as Institute).isOnboarded,
-  };
-};
-
+import { publicUser } from "./publicUser";
+import { PublicUser } from "@/types/api/helper/public-user";
 export const authOptions: NextAuthOptions = {
   providers: [
     // ======================================================
@@ -99,7 +23,7 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
 
-      async authorize(credentials, req): Promise<AuthUser | null> {
+      async authorize(credentials, req): Promise<PublicUser | null> {
         if (!credentials?.email || !credentials?.password) {
           throw new Error("Email & password required.");
         }
@@ -118,6 +42,7 @@ export const authOptions: NextAuthOptions = {
             "information.logo": 1,
             "information.profile_url": 1,
             "information.institute_name": 1,
+            "information.institute_code": 1,
             "information.short_name": 1,
           }
         );
@@ -165,7 +90,7 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
 
-      async authorize(credentials, req): Promise<AuthUser | null> {
+      async authorize(credentials, req): Promise<PublicUser | null> {
         if (!credentials?.teacherId || !credentials?.password)
           throw new Error("Teacher ID and password required.");
 
@@ -212,7 +137,7 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
 
-      async authorize(credentials, req): Promise<AuthUser | null> {
+      async authorize(credentials, req): Promise<PublicUser | null> {
         if (!credentials?.studentId || !credentials?.password)
           throw new Error("Student ID and password required.");
 
@@ -267,12 +192,15 @@ export const authOptions: NextAuthOptions = {
     },
 
     async jwt({ token, user }) {
-      if (user) Object.assign(token, user);
+      console.log("user", user, "token", token);
+      if (user) {
+        token.user = user;
+      }
       return token;
     },
-
     async session({ session, token }) {
-      session.user = token as unknown as PublicUser;
+      console.log("session", session, "token", token);
+      session.user = token.user as PublicUser;
       return session;
     },
   },
@@ -282,4 +210,4 @@ export const authOptions: NextAuthOptions = {
   },
 
   secret: process.env.NEXTAUTH_SECRET,
-};
+} satisfies NextAuthOptions;

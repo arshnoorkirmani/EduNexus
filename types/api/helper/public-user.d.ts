@@ -6,6 +6,8 @@ export interface PublicInstituteUser {
   logo: string | null;
   isVerified: boolean;
   isNew: boolean;
+  institute_name: string;
+  institute_code: string;
   email: string; // email login
 }
 
@@ -17,6 +19,8 @@ export interface PublicStudentUser {
   logo: string | null;
   isVerified: boolean;
   isNew: boolean;
+  institute_name: string;
+  institute_code: string;
   student_id: string;
 }
 
@@ -28,6 +32,8 @@ export interface PublicTeacherUser {
   logo: string | null;
   isVerified: boolean;
   isNew: boolean;
+  institute_name: string;
+  institute_code: string;
   teacher_id: string;
 }
 
@@ -39,6 +45,8 @@ export interface PublicBaseUser {
   logo: string | null;
   isVerified: boolean;
   isNew: boolean;
+  institute_name: string;
+  institute_code: string;
   email: string;
 }
 

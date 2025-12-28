@@ -7,6 +7,7 @@ export type ConnectionObject = {
 
 const globalWithMongoose = globalThis as typeof globalThis & {
   mongooseConnection?: ConnectionObject;
+  mongoosePromise?: Promise<typeof mongoose> | null;
 };
 
 export default async function dbConnect(
@@ -21,14 +22,34 @@ export default async function dbConnect(
 
   const targetDb = databaseName || DEFAULT_DB;
 
+  // If a connection is currently being established, wait for it
+  if (globalWithMongoose.mongoosePromise) {
+    try {
+      await globalWithMongoose.mongoosePromise;
+    } catch (e) {
+      // If the pending connection failed, clearing promise will be handled below or already handled
+      globalWithMongoose.mongoosePromise = null;
+    }
+  }
+
   // Reuse connection if DB is same
   if (
-    globalWithMongoose.mongooseConnection &&
-    globalWithMongoose.mongooseConnection.isConnected === 1 &&
-    globalWithMongoose.mongooseConnection.dbName === targetDb
+    mongoose.connection.readyState === 1 &&
+    mongoose.connection.name === targetDb
   ) {
     console.log(`🔁 Reusing cached connection: ${targetDb}`);
-    return globalWithMongoose.mongooseConnection;
+    return {
+      isConnected: mongoose.connection.readyState,
+      dbName: mongoose.connection.name,
+    };
+  }
+
+  // If connected to a different DB, disconnect first to allow switching
+  if (mongoose.connection.readyState !== 0) {
+    console.log(
+      `Switching database: ${mongoose.connection.name} ➡ ${targetDb}`
+    );
+    await mongoose.disconnect();
   }
 
   let connectionUri = MONGO_BASE.replace(/\/+$/, "");
@@ -45,10 +66,13 @@ export default async function dbConnect(
   }
 
   try {
-    const db = await mongoose.connect(connectionUri, {
+    // Store the promise globally so parallel requests wait
+    globalWithMongoose.mongoosePromise = mongoose.connect(connectionUri, {
       maxPoolSize: 10,
       serverSelectionTimeoutMS: 6000,
     });
+
+    const db = await globalWithMongoose.mongoosePromise;
 
     console.log(`✅ Connected to MongoDB: ${db.connection.name}`);
 
@@ -63,6 +87,7 @@ export default async function dbConnect(
     return connection;
   } catch (err) {
     console.error("❌ MongoDB connection error:", err);
+    globalWithMongoose.mongoosePromise = null;
     throw new Error("Database connection failed");
   }
 }

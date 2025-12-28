@@ -5,6 +5,7 @@ import { status } from "./institute.model";
 import { Student } from "./student.model";
 import { Teacher } from "./teacher.model";
 import { User } from "./user.model";
+import { CourseDocument } from "./course.model";
 
 // ==========================================================
 export interface InstituteInformation {
@@ -111,7 +112,7 @@ export interface TeacherModuleState {
 // ACADEMICS MODULE
 // ==========================================================
 export interface AcademicsModuleState {
-  courses: any[];
+  courses: CourseDocument[];
   batches: any[];
   subjects: any[];
   timetable: any[];
@@ -219,5 +220,5 @@ export interface InstituteSlice {
   // GLOBAL UI STATE
   // -----------------------------
   loading: boolean;
-  error: boolean | string | null;
+  error: boolean | string | null | ApiError;
 }

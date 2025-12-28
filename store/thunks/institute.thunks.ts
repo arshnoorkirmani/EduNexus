@@ -3,6 +3,14 @@ import { RootState } from "@/store";
 import { InstituteSlice } from "@/types/models/institute.slice";
 import { InstituteConf } from "@/config/InstituteClient";
 import { AppData } from "@/config/appConfig";
+// import { ApiError } from "next/dist/server/api-utils";
+
+export interface ThunkError {
+  code: string;
+  message: string;
+  status?: string;
+}
+import { CourseDocument } from "@/types/models/course.model";
 
 // ------------------------------------------------------
 // TEMPLATE: FETCH INSTITUTE (API GET)
@@ -10,29 +18,28 @@ import { AppData } from "@/config/appConfig";
 export const fetchInstitute = createAsyncThunk<
   InstituteSlice,
   string,
-  { state: RootState }
+  {
+    state: RootState;
+    rejectValue: ThunkError;
+  }
 >("institute/fetch", async (identifier, { rejectWithValue }) => {
   try {
     const res = await InstituteConf.fetchInstitute(identifier, ["all"]);
 
     if (!res.success) {
-      return rejectWithValue(
-        res.message || res.error || "Something went wrong"
-      );
+      return rejectWithValue({
+        code: "API_ERROR",
+        message: res.message || res.error || "Something went wrong",
+      });
     }
 
     const data = res.data as InstituteSlice;
-    console.log("fetchInstitute", data);
-    // --------------------------------------
-    // STATUS HANDLING (Business Rules)
-    // --------------------------------------
+
     switch (data.status) {
       case "active":
-        // ✅ fully allowed
         return data;
 
       case "pending":
-        // ⏳ institute exists but setup not completed
         return rejectWithValue({
           code: "INSTITUTE_PENDING",
           message: "Institute verification is pending",
@@ -40,7 +47,6 @@ export const fetchInstitute = createAsyncThunk<
         });
 
       case "inactive":
-        // ⚠️ disabled by owner or system
         return rejectWithValue({
           code: "INSTITUTE_INACTIVE",
           message: "Institute account is inactive",
@@ -48,7 +54,6 @@ export const fetchInstitute = createAsyncThunk<
         });
 
       case "blocked":
-        // ⛔ blocked by admin
         return rejectWithValue({
           code: "INSTITUTE_BLOCKED",
           message: `Institute has been blocked by ${AppData.app.name}`,
@@ -56,60 +61,48 @@ export const fetchInstitute = createAsyncThunk<
         });
 
       default:
-        return rejectWithValue("Unknown institute status");
+        return rejectWithValue({
+          code: "UNKNOWN_STATUS",
+          message: "Unknown institute status",
+        });
     }
   } catch (error: any) {
-    return rejectWithValue(error.message || "Network error");
+    return rejectWithValue({
+      code: "NETWORK_ERROR",
+      message: error.message || "Network error",
+    });
   }
 });
 
 // ------------------------------------------------------
-// TEMPLATE: UPDATE INSTITUTE (API PATCH)
+// FETCH COURSES
 // ------------------------------------------------------
-// export const updateInstituteAPI = createAsyncThunk<
-//   InstituteSlice, // response type
-//   Partial<InstituteSlice>, // payload type sent
-//   { state: RootState } // thunk API
-// >("institute/update", async (payload, { getState, rejectWithValue }) => {
-//   try {
-//     const id = getState().institute._id; // if needed
-//     const res = await fetch(`/api/institute/${id}`, {
-//       method: "PATCH",
-//       headers: { "Content-Type": "application/json" },
-//       body: JSON.stringify(payload),
-//     });
+export const fetchInstituteCourses = createAsyncThunk<
+  CourseDocument[],
+  { params: { institute_code: string } },
+  {
+    state: RootState;
+    rejectValue: ThunkError;
+  }
+>("institute/courses/fetch", async (payload, { rejectWithValue }) => {
+  try {
+    console.log("payload", payload);
+    const res = await InstituteConf.fetchInstituteCourses<CourseDocument[]>(
+      payload?.params
+    );
 
-//     if (!res.ok) {
-//       const error = await res.json();
-//       return rejectWithValue(error.message);
-//     }
+    if (!res.success) {
+      return rejectWithValue({
+        code: "API_ERROR",
+        message: res.error || "Failed to fetch courses",
+      });
+    }
 
-//     return (await res.json()) as InstituteSlice;
-//   } catch (error: any) {
-//     return rejectWithValue(error.message);
-//   }
-// });
-
-// ------------------------------------------------------
-// TEMPLATE: DELETE INSTITUTE
-// ------------------------------------------------------
-// export const deleteInstitute = createAsyncThunk<
-//   { success: boolean }, // returned type
-//   string, // instituteId
-//   { state: RootState }
-// >("institute/delete", async (id, { rejectWithValue }) => {
-//   try {
-//     const res = await fetch(`/api/institute/${id}`, {
-//       method: "DELETE",
-//     });
-
-//     if (!res.ok) {
-//       const error = await res.json();
-//       return rejectWithValue(error.message);
-//     }
-
-//     return { success: true };
-//   } catch (error: any) {
-//     return rejectWithValue(error.message);
-//   }
-// });
+    return res.data;
+  } catch (error: any) {
+    return rejectWithValue({
+      code: "NETWORK_ERROR",
+      message: error.message || "Network error",
+    });
+  }
+});

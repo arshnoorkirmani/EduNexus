@@ -23,9 +23,9 @@ const StudentSchema = new Schema<Student>(
         ref: "Institute",
         required: true,
       },
-      instituteCode: { type: String, required: true },
-      instituteLogo: { type: String, default: null },
-      instituteName: { type: String, required: true },
+      institute_code: { type: String, required: true },
+      institute_logo: { type: String, default: null },
+      institute_name: { type: String, required: true },
     },
 
     /* ================= PERSONAL ================= */

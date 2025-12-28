@@ -326,6 +326,136 @@ class Institute {
       };
     }
   }
+
+  /**
+   * ---------------------------------------------------------
+   * Fetch Institute Courses
+   * ---------------------------------------------------------
+   */
+  public async fetchInstituteCourses<T>(params: {
+    institute_code: string;
+  }): Promise<ApiResponse<T>> {
+    const res = await apiClient.get<ApiResponse<T>>(
+      "/api/institute/course",
+      params
+    );
+    console.log("fetchInstituteCourses", params);
+    return res;
+  }
+
+  /**
+   * ---------------------------------------------------------
+   * Validate Institute Code
+   * ---------------------------------------------------------
+   */
+  public validateInstituteCode(code: string): boolean {
+    // Alphanumeric, case-insensitive, between 3 and 20 characters
+    const regex = /^[a-z0-9]{3,20}$/i;
+    return regex.test(code);
+  }
+  //=======================================================================================================
+  /* ------------------------------------------------------------- */
+  /* PUBLIC: FETCH COURSES                                         */
+  /* ------------------------------------------------------------- */
+  public static async fetchCourses<T>(
+    institute_code: string,
+    params?: {
+      page?: number;
+      limit?: number | "all";
+      course_code?: string;
+      course_name?: string;
+      category?: string;
+      type?: string;
+      status?: string;
+    }
+  ): Promise<T> {
+    if (!institute_code) {
+      throw new Error("institute_code is required");
+    }
+
+    const response = await apiClient.get<ApiResponse<T>>(
+      "/api/institute/course",
+      {
+        institute_code,
+        ...params,
+      }
+    );
+
+    return response.data;
+  }
+
+  /* ------------------------------------------------------------- */
+  /* PUBLIC: CREATE COURSE                                        */
+  /* ------------------------------------------------------------- */
+  public static async createCourse<T>(payload: {
+    institute_code: string;
+    course_code: string;
+    course_name: string;
+    category: string;
+    type: "university" | "computer" | "skill";
+    duration: { value: number; unit: "year" | "month" };
+    eligibility?: string;
+    fees: { total: number; currency?: string };
+    status?: "active" | "inactive" | "archived";
+    description?: string;
+  }): Promise<T> {
+    if (!payload?.institute_code) {
+      throw new Error("institute_code is required");
+    }
+
+    const response = await apiClient.post<ApiResponse<T>>(
+      "/api/institute/course",
+      payload
+    );
+    return response.data;
+  }
+
+  /* ------------------------------------------------------------- */
+  /* PUBLIC: UPDATE COURSE                                        */
+  /* ------------------------------------------------------------- */
+  public static async updateCourse<T>(payload: {
+    institute_code: string;
+    course_id: string;
+    course_name?: string;
+    category?: string;
+    type?: "university" | "computer" | "skill";
+    duration?: { value: number; unit: "year" | "month" };
+    eligibility?: string;
+    fees?: { total: number; currency?: string };
+    status?: "active" | "inactive" | "archived";
+    description?: string;
+  }): Promise<T> {
+    if (!payload?.institute_code || !payload?.course_id) {
+      throw new Error("institute_code and course_id are required");
+    }
+
+    const response = await apiClient.put<ApiResponse<T>>(
+      "/api/institute/course",
+      payload
+    );
+    return response.data;
+  }
+
+  /* ------------------------------------------------------------- */
+  /* PUBLIC: ARCHIVE COURSE (SOFT DELETE)                          */
+  /* ------------------------------------------------------------- */
+  public static async archiveCourse<T>(
+    institute_code: string,
+    course_id: string
+  ): Promise<T> {
+    if (!institute_code || !course_id) {
+      throw new Error("institute_code and course_id are required");
+    }
+
+    const response = await apiClient.delete<ApiResponse<T>>(
+      "/api/institute/course",
+      {
+        params: { institute_code, course_id },
+      }
+    );
+
+    return response.data;
+  }
 }
 
 export const InstituteConf = new Institute();

@@ -16,6 +16,7 @@ import { TimeInput } from "./timeInput";
 import { DateInput } from "./date-input";
 import { PasswordInput } from "../PasswordInput";
 import { cn } from "@/lib/utils";
+import { useAppForm } from "../FormContext";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                       */
@@ -60,6 +61,7 @@ export function Field<T extends FieldValues>({
   parentClassName,
   className,
 }: FieldProps<T>) {
+  const { isLoading } = useAppForm<T>?.();
   return (
     <FormField
       control={form.control}
@@ -87,7 +89,7 @@ export function Field<T extends FieldValues>({
                 field,
                 value,
                 placeholder,
-                disabled,
+                disabled: disabled || isLoading,
                 className,
               })}
             </FormControl>
@@ -129,7 +131,7 @@ function renderField({
           placeholder={placeholder}
           disabled={disabled}
           iconShow={false}
-          className={cn(className)}
+          className={cn(className, disabled && "text-base disabled:opacity-70")}
         />
       );
     case "textarea":
@@ -139,7 +141,11 @@ function renderField({
           value={value}
           placeholder={placeholder}
           disabled={disabled}
-          className={cn("resize-none", className)}
+          className={cn(
+            "resize-none",
+            className,
+            disabled && "text-base disabled:opacity-70"
+          )}
         />
       );
 
@@ -149,7 +155,7 @@ function renderField({
           value={field.value}
           onChange={field.onChange}
           disabled={disabled}
-          className={cn(className)}
+          className={cn(className, disabled && "text-base disabled:opacity-70")}
         />
       );
 
@@ -159,7 +165,7 @@ function renderField({
           value={field.value}
           onChange={field.onChange}
           disabled={disabled}
-          className={cn(className)}
+          className={cn(className, disabled && "text-base disabled:opacity-70")}
         />
       );
 
@@ -171,7 +177,7 @@ function renderField({
           type={type}
           placeholder={placeholder}
           disabled={disabled}
-          className={cn(className)}
+          className={cn(className, disabled && "text-base disabled:opacity-70")}
         />
       );
   }

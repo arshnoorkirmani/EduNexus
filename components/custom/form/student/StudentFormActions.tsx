@@ -14,11 +14,16 @@ import {
 } from "@/components/ui/alert-dialog";
 import { FieldValues } from "react-hook-form";
 import { useAppForm } from "../FormContext";
+import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type FormActionsProps<T extends FieldValues> = {
   /** Submit button label */
   submitLabel?: string;
+
+  /** Reset button label */
   resetLabel?: string;
+
   /** Reset confirmation title */
   resetTitle?: string;
 
@@ -44,14 +49,13 @@ export function FormActions<T extends FieldValues>({
   onReset,
   submitProps,
 }: FormActionsProps<T>) {
-  const { form } = useAppForm<T>();
+  const { form, formId, isLoading } = useAppForm<T>();
+
+  const isSubmitting = isLoading || form.formState.isSubmitting;
+  const canReset = form.formState.isDirty && !isSubmitting;
 
   const handleReset = () => {
-    if (onReset) {
-      onReset(form);
-    } else {
-      form.reset();
-    }
+    onReset ? onReset(form) : form.reset();
   };
 
   return (
@@ -60,7 +64,7 @@ export function FormActions<T extends FieldValues>({
       {!hideReset && (
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="outline" disabled={!form.formState.isDirty}>
+            <Button variant="outline" disabled={!canReset}>
               {resetLabel}
             </Button>
           </AlertDialogTrigger>
@@ -74,10 +78,15 @@ export function FormActions<T extends FieldValues>({
             </AlertDialogHeader>
 
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel autoFocus>Cancel</AlertDialogCancel>
+
               <AlertDialogAction
                 onClick={handleReset}
-                className="bg-destructive text-destructive-foreground"
+                className={cn(
+                  "inline-flex items-center justify-center gap-2",
+                  "bg-destructive text-destructive-foreground",
+                  "transition-colors duration-200"
+                )}
               >
                 {resetLabel}
               </AlertDialogAction>
@@ -89,10 +98,26 @@ export function FormActions<T extends FieldValues>({
       {/* Submit */}
       <Button
         type="submit"
-        disabled={form.formState.isSubmitting}
+        form={formId}
+        disabled={isSubmitting}
+        aria-busy={isSubmitting}
+        aria-disabled={isSubmitting}
         {...submitProps}
+        className={cn(
+          "inline-flex items-center justify-center gap-2",
+          "min-w-[120px] font-medium",
+          "transition-all duration-200",
+          isSubmitting && "pointer-events-none opacity-60",
+          submitProps?.className
+        )}
       >
-        {submitLabel}
+        {isSubmitting && (
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+        )}
+
+        <span className="whitespace-nowrap">
+          {isSubmitting ? "Processing…" : submitLabel}
+        </span>
       </Button>
     </div>
   );

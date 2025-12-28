@@ -6,7 +6,9 @@ import { z } from "zod";
 
 const objectId = z.string().min(1, "Invalid ID");
 
-const phoneNumber = z.string().regex(/^[6-9]\d{9}$/, "Invalid mobile number");
+const phoneNumber = z
+  .string()
+  .regex(/^(\+91[\-\s]?)?[6-9]\d{9}$/, "Invalid mobile number");
 
 const timeHHMM = z
   .string()
@@ -30,7 +32,7 @@ export const studentFormSchema = z
     /* ================= AUTH ================= */
 
     auth: z.object({
-      studentId: z.string().min(3),
+      studentId: z.string({ message: "Student Id is required" }),
       password: z.string().min(6),
       role: UserRoleEnum,
       verify: z.object({
@@ -43,7 +45,7 @@ export const studentFormSchema = z
 
     institute: z.object({
       instituteId: objectId,
-      instituteCode: z.string(),
+      instituteCode: z.string().trim(),
       instituteLogo: z.string().url().optional(),
       instituteName: z.string(),
     }),
@@ -83,9 +85,9 @@ export const studentFormSchema = z
 
       course: z
         .object({
-          name: z.string(),
+          name: z.string().min(1, "Course is required"),
           groupTitle: z.string().optional(),
-          courseTitle: z.string().optional(),
+          course_code: z.string().optional(),
           baseFee: z.number().nonnegative().optional(),
         })
         .optional(),
@@ -136,12 +138,28 @@ export const studentFormSchema = z
 
     documents: z.array(
       z.object({
-        type: z.string(), // Aadhaar, Marksheet, TC, Photo
-        name: z.string(),
-        url: z.string().url(),
-        size: z.number().positive(),
-        mimeType: z.string(),
-        status: DocumentStatusEnum,
+        type: z.string(),
+        file: z.object({
+          name: z.string(),
+          url: z.string().url(),
+          mimeType: z.string(),
+          size: z.number(),
+        }),
+        uploadedAt: z.coerce.date(),
+        uploadedBy: z.object({
+          name: z.string(),
+          email: z.string(),
+        }),
+        verified: z
+          .object({
+            status: z.boolean(),
+            verifiedAt: z.coerce.date().optional(),
+            verifiedBy: z.string().optional(),
+          })
+          .optional(),
+        visibility: z
+          .enum(["institute", "user", "student", "public"])
+          .optional(),
       })
     ),
   })

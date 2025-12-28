@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import * as React from "react";
 import { UseFormReturn, FieldValues, Path } from "react-hook-form";
 import {
   FormField,
@@ -23,18 +23,22 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { CheckIcon, ChevronDownIcon } from "lucide-react";
+import { Check, ChevronDown, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAppForm } from "../custom/form/FormContext";
 
-// ✅ Define types
-type CourseOption = {
-  value: string;
+/* -------------------------------------------------------------------------- */
+/* Types                                                                      */
+/* -------------------------------------------------------------------------- */
+
+export type SelectOption = {
   label: string;
-};
+  value: string;
+} & Record<string, any>;
 
-type OptionGroup = {
+export type SelectGroup = {
   title: string;
-  courses: CourseOption[];
+  options: SelectOption[];
 };
 
 interface SearchableSelectFieldProps<T extends FieldValues> {
@@ -42,8 +46,14 @@ interface SearchableSelectFieldProps<T extends FieldValues> {
   name: Path<T>;
   label: string;
   placeholder?: string;
-  groups: OptionGroup[];
+  groups: SelectGroup[];
+  loading?: boolean;
+  disabled?: boolean;
 }
+
+/* -------------------------------------------------------------------------- */
+/* Component                                                                  */
+/* -------------------------------------------------------------------------- */
 
 export function SearchableSelectField<T extends FieldValues>({
   form,
@@ -51,74 +61,93 @@ export function SearchableSelectField<T extends FieldValues>({
   label,
   placeholder = "Select option",
   groups,
+  loading,
+  disabled = false,
 }: SearchableSelectFieldProps<T>) {
-  const [open, setOpen] = useState(false);
-  const [value, setValue] = useState("");
-
+  const [open, setOpen] = React.useState(false);
+  const { isLoading } = useAppForm<T>();
+  const allOptions = React.useMemo(
+    () => groups.flatMap((g) => g.options),
+    [groups]
+  );
   return (
     <FormField
       control={form.control}
       name={name}
-      render={({ field }) => (
-        <FormItem className="space-y-1.5">
-          <FormLabel className="text-sm font-medium">{label}</FormLabel>
-          <FormControl>
-            <Popover open={open} onOpenChange={setOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={open}
-                  className={cn(
-                    "w-full justify-between",
-                    !field.value && "text-muted-foreground"
-                  )}
-                >
-                  {field.value
-                    ? groups
-                        .flatMap((g) => g.courses)
-                        .find((c) => c.value === field.value)?.label
-                    : placeholder}
-                  <ChevronDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
+      render={({ field }) => {
+        const selected = allOptions.find((opt) => opt.value === field.value);
 
-              <PopoverContent className="w-full p-0">
-                <Command value={value} onValueChange={setValue}>
-                  <CommandInput
-                    placeholder={`Search ${label.toLowerCase()}...`}
-                  />
-                  <CommandList>
-                    <CommandEmpty>No course found.</CommandEmpty>
+        return (
+          <FormItem className="space-y-1.5">
+            <FormLabel className="text-sm font-medium">{label}</FormLabel>
 
-                    {/* ✅ Render grouped options */}
-                    {groups.map((group) => (
-                      <CommandGroup key={group.title} heading={group.title}>
-                        {group.courses.map((course) => (
-                          <CommandItem
-                            key={course.value}
-                            value={course.value}
-                            onSelect={() => {
-                              form.setValue(name, course.value as any);
-                              setOpen(false);
-                            }}
-                          >
-                            {course.label}
-                            {course.value === field.value && (
-                              <CheckIcon className="ml-auto h-4 w-4" />
-                            )}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    ))}
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
+            <FormControl>
+              <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild disabled={disabled || isLoading}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    role="combobox"
+                    disabled={disabled}
+                    className={cn(
+                      "w-full justify-between gap-2 overflow-hidden",
+                      !field.value && "text-muted-foreground"
+                    )}
+                  >
+                    <span className="flex-1 min-w-0 truncate text-left">
+                      {selected?.label ?? placeholder}
+                    </span>
+
+                    <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+
+                <PopoverContent className="w-fit p-1 mr-5">
+                  <Command>
+                    <CommandInput
+                      placeholder={`Search ${label.toLowerCase()}...`}
+                    />
+
+                    <CommandList>
+                      {!loading && (
+                        <CommandEmpty>No options found.</CommandEmpty>
+                      )}
+                      {loading && (
+                        <CommandEmpty className="flex items-center justify-center p-5 text-xs">
+                          <Loader2 className="mr-1 h-4 w-4 animate-spin" />{" "}
+                          Loading options...
+                        </CommandEmpty>
+                      )}
+                      {groups.map((group) => (
+                        <CommandGroup key={group.title} heading={group.title}>
+                          {group.options.map((option) => (
+                            <CommandItem
+                              className="text-xs"
+                              key={option.value}
+                              value={option.value}
+                              onSelect={() => {
+                                field.onChange(option.value);
+                                setOpen(false);
+                              }}
+                            >
+                              {option.label}
+                              {option.value === field.value && (
+                                <Check className="ml-auto h-4 w-4" />
+                              )}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      ))}
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </FormControl>
+
+            <FormMessage />
+          </FormItem>
+        );
+      }}
     />
   );
 }

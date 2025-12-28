@@ -5,8 +5,9 @@ import { UseFormReturn, FieldValues, Path } from "react-hook-form";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Upload, X, RotateCcw, FileText, Trash, Check } from "lucide-react";
+import { Upload, X, RotateCcw, FileText } from "lucide-react";
 import type { ImageKitUploadResult } from "@/types/imagekit";
+import { StudentDocument } from "@/types/models/student.model";
 import {
   Select,
   SelectContent,
@@ -18,11 +19,44 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { errorToast } from "@/components/custom/utils/Toast";
 import { useImageKitUpload } from "@/hooks/useImageKitUpload";
 import { cn } from "@/lib/utils";
+import mediaService from "@/config/MediaConfig";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  MediaProvider,
+  MediaType,
+  MediaStatus,
+  MediaVisibility,
+  OwnerEntity,
+} from "@/types/media";
+import { useAppForm } from "../FormContext";
+
+const DOCUMENT_TYPES = [
+  "Aadhaar Card",
+  "10th Marksheet",
+  "12th Marksheet",
+  "Profile Photo",
+] as const;
+const ImagekitFileSize: number =
+  Number(process.env.NEXT_PUBLIC_IMAGEKIT_FILE_SIZE) || 5;
+export function getMAX_SIZE(size: number) {
+  return size * 1024 * 1024;
+}
+export const formatInstituteName = (value?: string) =>
+  value
+    ?.trim()
+    .replace(/\./g, "") // ❗ remove dots (S.K. → SK)
+    .replace(/\s+/g, "-") // spaces → hyphen
+    .replace(/[^a-zA-Z0-9-]/g, "") // remove other symbols
+    .replace(/-+/g, "-") // collapse multiple hyphens
+    .replace(/(^-|-$)/g, "") || // trim
+  "Draft";
+export const MAX_SIZE = getMAX_SIZE(ImagekitFileSize); // MB → bytes
+export const ALLOWED_TYPES = ["image/png", "image/jpeg", "application/pdf"];
 
 type Props<
   T extends FieldValues & {
     auth?: { studentId?: string };
-    documents?: unknown[];
+    documents?: StudentDocument[];
   }
 > = {
   form: UseFormReturn<T>;
@@ -31,21 +65,25 @@ type Props<
 export function DocumentUploadCard<
   T extends FieldValues & {
     auth?: { studentId?: string };
-    documents?: unknown[];
+    documents?: StudentDocument[];
   }
 >({ form }: Props<T>) {
   const [docType, setDocType] = useState("");
   const [customDocName, setCustomDocName] = useState("");
   const [openImage, setOpenImage] = useState<string | null>(null);
+  const { user } = useAuth();
+  const { isLoading } = useAppForm<T>?.();
 
   const { uploads, startUpload, retry, cancel, clear, clearAll } =
     useImageKitUpload();
+
+  const documents = form.watch("documents" as Path<T>);
   useEffect(() => {
-    const docs = form.getValues("documents" as Path<T>);
-    if (!docs || docs.length === 0) {
+    if (!documents || (Array.isArray(documents) && documents.length === 0)) {
       clearAll();
     }
-  }, [form.watch("documents" as Path<T>)]);
+  }, [documents, clearAll]);
+
   const studentId = form.getValues("auth.studentId" as Path<T>) as
     | string
     | undefined;
@@ -60,71 +98,123 @@ export function DocumentUploadCard<
 
     const label = docType === "other" ? customDocName : docType;
 
-    Array.from(files).forEach(async (file) => {
-      const folderPath = studentId ? `/students/${studentId}` : undefined;
+    for (const file of Array.from(files)) {
+      // Validation
+      if (!ALLOWED_TYPES.includes(file.type)) {
+        errorToast(`${docType}: Only PNG, JPG and PDF files are allowed`);
+        continue;
+      }
+
+      if (file.size > MAX_SIZE) {
+        errorToast(`${docType}: File size must be under ${ImagekitFileSize}MB`);
+        continue;
+      }
+
+      // Duplicate Check
+      const existingDocs =
+        (form.getValues("documents" as Path<T>) as StudentDocument[]) || [];
+      if (
+        existingDocs.some(
+          (d) =>
+            d.type === label ||
+            (d.file.name === file.name && d.file.size === file.size)
+        )
+      ) {
+        errorToast(`${label} is already exists in uploaded document`);
+        // continue; // Optional: block duplicate uploads
+      }
+
+      const folderPath = studentId
+        ? `${formatInstituteName(user?.institute_name)}/students/${studentId}`
+        : undefined;
+      console.log(folderPath, user?.institute_name);
       console.log("Document Upload", label);
-      const result = await startUpload(file, label, folderPath);
 
-      if (!result) return;
+      try {
+        const result = await startUpload(file, label, folderPath);
+        console.log("Document Upload Result", result);
+        if (!result) {
+          errorToast(`Failed to upload ${docType}`);
+          continue;
+        }
 
-      /* ------------------- Save to Form (StudentDocument) ------------------- */
+        /* ------------------- Save to Form (StudentDocument) ------------------- */
 
-      const existing = (form.getValues("documents" as Path<T>) as any[]) || [];
-      const newDoc = {
-        type: label,
-        file: {
-          name: result.name,
-          url: result.url,
-          mimeType: file.type,
-          size: result.size,
-        },
-        uploadedAt: new Date(),
-        uploadedBy: {
-          name: "Admin",
-          email: "admin@ims.com",
-        },
-        visibility: "admin",
-      };
+        const currentDocs =
+          (form.getValues("documents" as Path<T>) as StudentDocument[]) || [];
 
-      form.setValue("documents" as Path<T>, [...existing, newDoc] as any);
-
-      /* ----------------------- Save to Media (Cron) ------------------------- */
-
-      console.log("/api/media", {
-        method: "POST",
-        body: {
+        const newDoc: StudentDocument = {
+          type: label,
           file: {
-            provider: "imagekit",
-            providerFileId: result.fileId,
             name: result.name,
             url: result.url,
-            thumbnailUrl: result.thumbnailUrl,
             mimeType: file.type,
             size: result.size,
-            type: file.type.startsWith("image/")
-              ? "image"
-              : file.type === "application/pdf"
-              ? "pdf"
-              : "other",
           },
+          uploadedAt: new Date(),
+          uploadedBy: {
+            name: user?.name || "Unknown",
+            email: user?.identifier || "Unknown",
+          },
+          visibility: "public" as const, // Cast to literal if needed
+        };
+
+        form.setValue("documents" as Path<T>, [...currentDocs, newDoc] as any, {
+          shouldDirty: true,
+          shouldTouch: true,
+        });
+
+        /* ----------------------- Save to Media (Cron) ------------------------- */
+        await mediaService.create({
+          provider: MediaProvider.IMAGEKIT,
+          providerFileId: result.fileId,
+          name: result.name,
+          url: result.url,
+          thumbnailUrl: result.thumbnailUrl,
+          mimeType: file.type,
+          size: result.size,
+          type: file.type.startsWith("image/")
+            ? MediaType.IMAGE
+            : file.type === "application/pdf"
+            ? MediaType.PDF
+            : MediaType.OTHER,
           owner: {
-            entity: "student",
-            entityId: studentId ?? "",
+            entity: OwnerEntity.STUDENT,
+            entityId: studentId ?? "draft",
             field: "documents",
           },
-          status: "uploaded",
-          visibility: "admin",
-        },
-      });
-    });
+          status: MediaStatus.TEMPORARY,
+          visibility: MediaVisibility.PUBLIC,
+          uploadedBy: {
+            institute_name: user?.institute_name || "Unknown",
+            name: user?.name || "Unknown",
+            email: user?.identifier || "Unknown",
+          },
+        });
+      } catch (error) {
+        console.error("Upload error:", error);
+        errorToast(`Error uploading ${file.name}`);
+      }
+    }
 
     // Remove an uploaded item: delete from form documents and clear preview
   };
-  const removeUploaded = (id: string, result?: ImageKitUploadResult) => {
+  const removeUploaded = async (id: string, result?: ImageKitUploadResult) => {
     if (result) {
-      const existing = (form.getValues("documents" as Path<T>) as any[]) || [];
-      const filtered = existing.filter((d) => d?.file?.url !== result.url);
-      form.setValue("documents" as Path<T>, filtered as any);
+      const existing =
+        (form.getValues("documents" as Path<T>) as StudentDocument[]) || [];
+      const filtered = existing.filter((d) => d.file.url !== result.url);
+      form.setValue("documents" as Path<T>, filtered as any, {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+
+      // Call media service to delete
+      try {
+        await mediaService.delete(result.fileId);
+      } catch (error) {
+        console.error("Failed to delete media:", error);
+      }
     }
 
     // remove preview entry
@@ -145,15 +235,20 @@ export function DocumentUploadCard<
 
         <CardContent className="space-y-4">
           {/* ================= DOCUMENT TYPE ================= */}
-          <Select value={docType ?? undefined} onValueChange={setDocType}>
+          <Select
+            value={docType ?? undefined}
+            onValueChange={setDocType}
+            disabled={isLoading}
+          >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select document type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Aadhaar Card">Aadhaar Card</SelectItem>
-              <SelectItem value="10th Marksheet">10th Marksheet</SelectItem>
-              <SelectItem value="12th Marksheet">12th Marksheet</SelectItem>
-              <SelectItem value="Profile Photo">Profile Photo</SelectItem>
+              {DOCUMENT_TYPES.map((type) => (
+                <SelectItem key={type} value={type}>
+                  {type}
+                </SelectItem>
+              ))}
               <SelectItem value="other">Other</SelectItem>
             </SelectContent>
           </Select>
@@ -223,35 +318,43 @@ export function DocumentUploadCard<
               </div>
             ) : null}
             {Object.values(uploads).map((u) => (
-              <div key={u.id} className="relative border rounded-xl p-2">
+              <div
+                key={u.id}
+                className="relative border rounded-xl p-2 aspect-square"
+              >
                 <Button
                   size="icon"
                   variant="ghost"
                   className="absolute right-1 top-1 z-10 cursor-pointer rounded-2xl hover:text-destructive hover:bg-destructive/10"
                   onClick={() => {
-                    cancel(u.id);
-                    clear(u.id);
+                    if (u.status === "success" && u.result) {
+                      removeUploaded(u.id, u.result);
+                    } else {
+                      cancel(u.id);
+                      clear(u.id);
+                    }
                   }}
                 >
                   <X className="h-4 w-4" />
                 </Button>
 
-                <div className="relative">
+                <div className="relative aspect-square">
                   {u.file.type.startsWith("image/") ? (
                     <img
-                      src={URL.createObjectURL(u.file)}
-                      className={`h-32 w-full object-cover rounded-md ${
+                      src={u.previewUrl || ""}
+                      className={`h-full w-full object-cover rounded-md ${
                         u.status === "uploading"
                           ? "cursor-default opacity-80"
                           : "cursor-pointer"
                       }`}
                       onClick={() =>
                         u.status !== "uploading" &&
-                        setOpenImage(URL.createObjectURL(u.file))
+                        u.previewUrl &&
+                        setOpenImage(u.previewUrl)
                       }
                     />
                   ) : (
-                    <div className="h-32 flex items-center justify-center bg-muted rounded-md">
+                    <div className="h-full flex items-center justify-center bg-muted rounded-md">
                       <FileText />
                     </div>
                   )}

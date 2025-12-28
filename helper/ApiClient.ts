@@ -2,7 +2,10 @@ import axios, { AxiosRequestConfig } from "axios";
 import bcrypt from "bcryptjs";
 
 // Query params type
-type QueryParams = Record<string, string | number | boolean | null | undefined>;
+type QueryParams = Record<
+  string,
+  string | number | boolean | Object | null | undefined
+>;
 
 // Options type
 type FetchOptions = {
@@ -63,7 +66,7 @@ class ApiClient {
     } else {
       // Handle relative endpoints
       const cleanEndpoint = endpoint.replace(/^\/+/, "");
-      
+
       if (!cleanEndpoint.startsWith("api/")) {
         url = "/api/" + cleanEndpoint + queryStr;
       } else {
