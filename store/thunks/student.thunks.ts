@@ -1,6 +1,7 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { RootState } from "@/store";
 import { StudentSlice } from "@/types/models/studnet.slice";
+import { AppData } from "@/config/appConfig";
 
 // ======================================================
 // FETCH STUDENT (GET)
@@ -11,7 +12,9 @@ export const fetchStudent = createAsyncThunk<
   { state: RootState }
 >("student/fetch", async (studentId, { rejectWithValue }) => {
   try {
-    const res = await fetch(`/api/student/${studentId}`);
+    const res = await fetch(
+      `${AppData.routes.backend.api.student.base}/${studentId}`
+    );
 
     if (!res.ok) {
       const error = await res.json();
@@ -36,11 +39,14 @@ export const updateStudentProfile = createAsyncThunk<
   "student/updateProfile",
   async ({ studentId, payload }, { rejectWithValue }) => {
     try {
-      const res = await fetch(`/api/student/${studentId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const res = await fetch(
+        `${AppData.routes.backend.api.student.base}/${studentId}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
 
       if (!res.ok) {
         const error = await res.json();

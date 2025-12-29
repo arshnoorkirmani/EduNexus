@@ -224,6 +224,8 @@ export default function AddStudentPage() {
           studentService.generateStudentId(user.institute_code),
           studentService.generateRegistrationNo(user.institute_code),
         ]);
+        console.log("studentId", studentId);
+        console.log("registrationNo", registrationNo);
         if (studentId) {
           console.log("studentId", studentId);
           form.setValue("auth.studentId", studentId, { shouldDirty: false });
@@ -300,18 +302,29 @@ export default function AddStudentPage() {
     );
   }, [totalFees, paidFees, form]);
 
-  const onSubmit = (data: StudentFormData) => {
+  const onSubmit = async (data: StudentFormData) => {
     const documents = data.documents || [];
 
     const payload = {
       ...data,
       documents,
     };
+
+    const code = institute.information.institute_code;
+    if (!code) return;
+
     setIsLoading(true);
-    console.log("STUDENT_PAYLOAD", payload);
-    const time = setTimeout(() => {
+    console.log("Student Payload", payload);
+    // Call service
+    const request = studentService.createStudent(code, payload).then((res) => {
+      if (!res) throw new Error("Failed to create student");
+      return res;
+    });
+    try {
+      // Optional: Redirect or reset form here
+    } finally {
       setIsLoading(false);
-    }, 5000);
+    }
   };
 
   return (
@@ -450,17 +463,24 @@ export default function AddStudentPage() {
         {/* ================= ADDRESS ================= */}
         <Section
           title="Address Information"
-          cols={4}
+          cols={5}
           description="Residential address details used for correspondence, verification, and institutional records."
         >
+          {" "}
+          <Field
+            form={form}
+            name="personal.address.line"
+            label="Line"
+            placeholder="Line"
+            parentClassName="col-span-4 sm:col-span-2 lg:col-span-1"
+          />
           <Field
             form={form}
             name="personal.address.city"
             label="City"
             placeholder="City"
             parentClassName="col-span-4 sm:col-span-2 lg:col-span-1"
-          />
-
+          />{" "}
           <Field
             form={form}
             name="personal.address.state"
@@ -468,7 +488,6 @@ export default function AddStudentPage() {
             placeholder="State"
             parentClassName="col-span-4 sm:col-span-2 lg:col-span-1"
           />
-
           <Field
             form={form}
             name="personal.address.pincode"
@@ -476,7 +495,6 @@ export default function AddStudentPage() {
             placeholder="6-digit pincode"
             parentClassName="col-span-4 sm:col-span-2 lg:col-span-1"
           />
-
           <Field
             form={form}
             name="personal.address.country"
@@ -484,14 +502,13 @@ export default function AddStudentPage() {
             placeholder="Country"
             parentClassName="col-span-4 sm:col-span-2 lg:col-span-1"
           />
-
           <Field
             form={form}
             type="textarea"
             name="personal.address.fullAddress"
             label="Full Address"
             placeholder="House no, street, area, city, state, pincode"
-            parentClassName="col-span-4"
+            parentClassName="col-span-5"
             disabled
           />
         </Section>
@@ -632,6 +649,7 @@ export function Section({
     2: "sm:grid-cols-2 md:grid-cols-2",
     3: "sm:grid-cols-2 md:grid-cols-3",
     4: "sm:grid-cols-2 md:grid-cols-4",
+    5: "sm:grid-cols-2 md:grid-cols-5",
   }[cols];
 
   return (

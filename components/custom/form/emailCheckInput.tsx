@@ -84,7 +84,6 @@ export const EmailInput = forwardRef<HTMLInputElement, EmailInputProps<any>>(
           const res = await InstituteConf.checkEmailUnique(debounced);
           const isRegistered = res?.data?.isRegistered;
           const institute = res?.data?.institute || {};
-          console.log("Email Check:", { isRegistered, institute, mode });
           if (mode === "register") {
             // For register mode: email must not be registered
             setAvailableName?.("");

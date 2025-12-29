@@ -1,6 +1,7 @@
 // app/api/courses/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { CourseModel } from "@/models/CoursesSchema";
+import { CourseSchema } from "@/models/CoursesSchema";
+import mongoose from "mongoose";
 import dbConnect from "@/lib/DatabaseConnection";
 //=======================================================================//
 //                  POST method
@@ -47,12 +48,15 @@ export async function POST(req: NextRequest) {
     /* ------------------------------------------------------------- */
     /* DB CONNECTION (Institute Scoped)                               */
     /* ------------------------------------------------------------- */
-    await dbConnect(institute_code);
+    await dbConnect();
+
+    const db = mongoose.connection.useDb(institute_code, { useCache: true });
+    const Course = db.model("Course", CourseSchema);
 
     /* ------------------------------------------------------------- */
     /* CREATE COURSE                                                 */
     /* ------------------------------------------------------------- */
-    const course = await CourseModel.create({
+    const course = await Course.create({
       course_code: course_code.toUpperCase(),
       course_name: course_name.trim(),
       category,
@@ -118,7 +122,13 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    await dbConnect(institute_code);
+    // Connect to cluster (default DB)
+    await dbConnect();
+
+    // Tenant-specific connection without disconnecting main socket
+    const db = mongoose.connection.useDb(institute_code, { useCache: true });
+    // Compile model
+    const Course = db.model("Course", CourseSchema);
 
     /* ------------------------------------------------------------- */
     /* PAGINATION                                                     */
@@ -152,13 +162,13 @@ export async function GET(req: NextRequest) {
     /* QUERY                                                          */
     /* ------------------------------------------------------------- */
     const [courses, totalCourses] = await Promise.all([
-      CourseModel.find(filter)
+      Course.find(filter)
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .lean(),
 
-      CourseModel.countDocuments(filter),
+      Course.countDocuments(filter),
     ]);
 
     const totalPages = Math.ceil(totalCourses / limit);
@@ -218,7 +228,10 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    await dbConnect(institute_code);
+    await dbConnect();
+
+    const db = mongoose.connection.useDb(institute_code, { useCache: true });
+    const Course = db.model("Course", CourseSchema);
 
     const updateData: Record<string, any> = {};
 
@@ -243,7 +256,7 @@ export async function PUT(req: NextRequest) {
       };
     }
 
-    const updatedCourse = await CourseModel.findOneAndUpdate(
+    const updatedCourse = await Course.findOneAndUpdate(
       { course_code },
       { $set: updateData },
       { new: true }
@@ -296,9 +309,12 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    await dbConnect(institute_code);
+    await dbConnect();
 
-    const deletedCourse = await CourseModel.findOneAndUpdate(
+    const db = mongoose.connection.useDb(institute_code, { useCache: true });
+    const Course = db.model("Course", CourseSchema);
+
+    const deletedCourse = await Course.findOneAndUpdate(
       { course_code },
       { $set: { status: "archived" } },
       { new: true }

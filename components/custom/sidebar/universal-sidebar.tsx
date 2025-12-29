@@ -155,8 +155,8 @@ export default function ReadySidebar() {
   }, [role, institute, student, teacher, user]);
 
   useEffect(() => {
+    if (institute.loading) return;
     if (!institute.status) return;
-
     const messages = {
       pending: "Institute verification is pending",
       inactive: "Institute account is inactive",

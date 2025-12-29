@@ -1,7 +1,7 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { RootState } from "@/store";
 import { TeacherSlice } from "@/types/models/teacher.slice";
-
+import { AppData } from "@/config/appConfig";
 // ======================================================
 // FETCH TEACHER (GET)
 // ======================================================
@@ -11,7 +11,9 @@ export const fetchTeacher = createAsyncThunk<
   { state: RootState }
 >("teacher/fetch", async (teacherId, { rejectWithValue }) => {
   try {
-    const res = await fetch(`/api/teacher/${teacherId}`);
+    const res = await fetch(
+      `${AppData.routes.backend.api.teacher.base}/${teacherId}`
+    );
 
     if (!res.ok) {
       const error = await res.json();
@@ -36,11 +38,14 @@ export const updateTeacherProfile = createAsyncThunk<
   "teacher/updateProfile",
   async ({ teacherId, payload }, { rejectWithValue }) => {
     try {
-      const res = await fetch(`/api/teacher/${teacherId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const res = await fetch(
+        `${AppData.routes.backend.api.teacher.base}/${teacherId}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
 
       if (!res.ok) {
         const error = await res.json();

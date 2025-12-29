@@ -58,6 +58,8 @@ export const StudentDocumentSchema = new Schema<StudentDocument>(
       enum: [
         "Aadhaar Card",
         "Marksheet",
+        "10th Marksheet",
+        "12th Marksheet",
         "Transfer Certificate",
         "Profile Photo",
         "Other",
@@ -80,7 +82,7 @@ export const StudentDocumentSchema = new Schema<StudentDocument>(
     },
     visibility: {
       type: String,
-      enum: ["institute", "user", "student"],
+      enum: ["institute", "user", "student", "public"],
       default: "institute",
     },
   },

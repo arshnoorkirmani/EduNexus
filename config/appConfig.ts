@@ -114,6 +114,38 @@ export const AppData = {
         student: "/student/settings",
       },
     },
+    backend: {
+      api: {
+        sendEmail: "/api/send-email",
+        media: "/api/media",
+        imageKitAuth: "/api/imagekit-auth",
+        student: {
+          base: "/api/student",
+          checkId: "/api/student/check-student-id",
+          generateId: "/api/student/generate-id",
+        },
+        teacher: {
+          base: "/api/teacher",
+        },
+        otp: {
+          verify: "/api/otp/verify",
+        },
+        institute: {
+          register: "/api/institute",
+          login: "/api/institute/login",
+          verifyCode: "/api/institute/verify-code",
+          checkEmail: "/api/institute/check-email",
+          sendCode: "/api/institute/send-code",
+          getInstitute: "/api/institute",
+          createCourse: "/api/institute/course",
+          updateCourse: "/api/institute/course",
+          deleteCourse: "/api/institute/course",
+          getCourse: "/api/institute/course",
+          getSequence: "/api/institute/get-seq",
+          createStudent: "/api/student",
+        },
+      },
+    },
   },
   default: {
     institute: {

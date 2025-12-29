@@ -4,7 +4,7 @@ import { Schema, model, models, Types } from "mongoose";
 /* ------------------------------------------------------------------ */
 /* COURSE SCHEMA                                                       */
 /* ------------------------------------------------------------------ */
-const CourseSchema = new Schema<CourseDocument>(
+export const CourseSchema = new Schema<CourseDocument>(
   {
     course_code: {
       type: String,

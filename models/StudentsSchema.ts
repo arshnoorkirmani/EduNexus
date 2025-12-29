@@ -1,6 +1,7 @@
 import { Student } from "@/types/models/student.model";
 import { model, models, Schema } from "mongoose";
 import { StudentDocumentSchema } from "./StudentDocument";
+import { hash } from "bcryptjs";
 
 const StudentSchema = new Schema<Student>(
   {
@@ -23,9 +24,9 @@ const StudentSchema = new Schema<Student>(
         ref: "Institute",
         required: true,
       },
-      institute_code: { type: String, required: true },
-      institute_logo: { type: String, default: null },
-      institute_name: { type: String, required: true },
+      instituteCode: { type: String, required: true },
+      instituteLogo: { type: String, default: null },
+      instituteName: { type: String, required: true },
     },
 
     /* ================= PERSONAL ================= */
@@ -42,6 +43,7 @@ const StudentSchema = new Schema<Student>(
       mobile: { type: String, required: true },
       email: { type: String, lowercase: true, trim: true },
       fatherName: String,
+      motherName: String,
       address: {
         fullAddress: String,
         line: String,
@@ -56,15 +58,12 @@ const StudentSchema = new Schema<Student>(
     academic: {
       registrationNo: { type: String, required: true },
       rollNo: { type: String, required: true },
-      timing: {
-        hour: { type: Number, required: true },
-        minute: { type: Number, required: true },
-      },
+      timing: { type: String, required: true, trim: true, default: "00:00" },
       admissionDate: { type: Date, required: true },
       course: {
         name: String,
         groupTitle: String,
-        courseTitle: String,
+        course_code: String,
         baseFee: Number,
       },
     },
@@ -124,6 +123,11 @@ const StudentSchema = new Schema<Student>(
     },
 
     /* ================= STATUS ================= */
+    currentStatus: {
+      type: String,
+      enum: ["active", "inactive", "passed", "failed", "suspended", "dropout"],
+      default: "active",
+    },
 
     statusHistory: [
       {
@@ -152,6 +156,14 @@ const StudentSchema = new Schema<Student>(
     versionKey: false,
   }
 );
+
+StudentSchema.pre("save", async function (next) {
+  if (this.isModified("auth.password")) {
+    this.auth.password = await hash(this.auth.password, 12);
+  }
+  next();
+});
+
 StudentSchema.index(
   { "auth.studentId": 1, "institute.instituteId": 1 },
   { unique: true }
@@ -163,7 +175,7 @@ StudentSchema.index(
 );
 
 StudentSchema.index({ "institute.instituteId": 1 });
-StudentSchema.index({ status: 1 });
+StudentSchema.index({ currentStatus: 1 });
 StudentSchema.index({ "fees.status": 1 });
 StudentSchema.index({ "academic.admissionDate": -1 });
 
@@ -192,5 +204,9 @@ StudentSchema.pre("findOneAndUpdate", function (next) {
   }
   next();
 });
+if (process.env.NODE_ENV === "development" && models.Student) {
+  delete models.Student;
+}
+
 export const StudentModel =
   models.Student || model<Student>("Student", StudentSchema);

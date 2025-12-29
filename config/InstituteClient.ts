@@ -11,6 +11,7 @@ import {
   InstituteCodeResponse,
 } from "@/types/api/institute/institute-api";
 import { signIn } from "next-auth/react";
+import { AppData } from "./appConfig";
 // import { ApiResponse }
 class Institute {
   private IGNORE_WORDS: string[];
@@ -101,7 +102,7 @@ class Institute {
   ): Promise<ApiResponse<InstituteCheckEmailResponse>> {
     try {
       const res = await apiClient.get<ApiResponse<InstituteCheckEmailResponse>>(
-        "institute/check-email",
+        AppData.routes.backend.api.institute.checkEmail,
         { email }
       );
 
@@ -125,7 +126,7 @@ class Institute {
     try {
       const result = await apiClient.post<
         ApiResponse<{ institute_id: string; institute_name: string }>
-      >("institute", values);
+      >(AppData.routes.backend.api.institute.register, values);
 
       if (!result.success) {
         errorToast(result.error || "Registration failed");
@@ -207,7 +208,7 @@ class Institute {
 
     // 1️⃣ Create the request promise (typed correctly)
     const request = apiClient.post<ApiResponse<any>>(
-      "institute/verify-code",
+      AppData.routes.backend.api.institute.verifyCode,
       payload
     );
 
@@ -250,7 +251,7 @@ class Institute {
       console.log("InstituteConf - resend payload:", payload); //remove
 
       const response = await apiClient.post<ApiResponse<any>>(
-        "institute/send-code",
+        AppData.routes.backend.api.institute.sendCode,
         payload
       );
 
@@ -307,7 +308,7 @@ class Institute {
       // API CALL
       // ---------------------------------------------------------
       const response = await apiClient.get<ApiResponse<any>>(
-        "institute",
+        AppData.routes.backend.api.institute.getInstitute,
         params
       );
 
@@ -336,7 +337,7 @@ class Institute {
     institute_code: string;
   }): Promise<ApiResponse<T>> {
     const res = await apiClient.get<ApiResponse<T>>(
-      "/api/institute/course",
+      AppData.routes.backend.api.institute.getCourse,
       params
     );
     console.log("fetchInstituteCourses", params);
@@ -374,7 +375,7 @@ class Institute {
     }
 
     const response = await apiClient.get<ApiResponse<T>>(
-      "/api/institute/course",
+      AppData.routes.backend.api.institute.getCourse,
       {
         institute_code,
         ...params,
@@ -404,7 +405,7 @@ class Institute {
     }
 
     const response = await apiClient.post<ApiResponse<T>>(
-      "/api/institute/course",
+      AppData.routes.backend.api.institute.createCourse,
       payload
     );
     return response.data;
@@ -430,7 +431,7 @@ class Institute {
     }
 
     const response = await apiClient.put<ApiResponse<T>>(
-      "/api/institute/course",
+      AppData.routes.backend.api.institute.updateCourse,
       payload
     );
     return response.data;
@@ -448,7 +449,7 @@ class Institute {
     }
 
     const response = await apiClient.delete<ApiResponse<T>>(
-      "/api/institute/course",
+      AppData.routes.backend.api.institute.deleteCourse,
       {
         params: { institute_code, course_id },
       }

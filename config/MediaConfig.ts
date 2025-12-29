@@ -5,13 +5,14 @@ import {
   MediaOwner,
   MediaStatus,
 } from "@/types/media";
+import { AppData } from "./appConfig";
 
 /**
  * Service for handling Media operations.
  * Communicates with the /api/media endpoints.
  */
 class MediaService {
-  private readonly base = "/api/media";
+  private readonly base = AppData.routes.backend.api.media;
 
   /**
    * Create a new media record.

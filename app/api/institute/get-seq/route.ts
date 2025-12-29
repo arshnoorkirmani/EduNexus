@@ -1,5 +1,6 @@
 import dbConnect from "@/lib/DatabaseConnection";
-import { CounterModel } from "@/models/CounterSchema";
+import { CounterModel, CounterSchema } from "@/models/CounterSchema";
+import mongoose from "mongoose";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -20,13 +21,38 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    await dbConnect(instituteCode);
+    // Connect to the cluster (default DB) without switching global connection
+    await dbConnect();
+
+    // Use useDb for tenant-specific connection
+    const db = mongoose.connection.useDb(instituteCode, { useCache: true });
+    // Compile model on this connection
+    const Counter = db.model("Counter", CounterSchema);
 
     /* ------------------------------------------------------------------ */
     /* ATOMICALLY INCREMENT AND RETURN NEW SEQUENCE                        */
     /* ------------------------------------------------------------------ */
-    const counter = await CounterModel.findOne({ key });
+    console.log("Institute Code", instituteCode);
 
+    // Use the locally-scoped model
+    const counter = await Counter.findOne({ key });
+    console.log("Counter", counter, instituteCode);
+
+    if (!counter) {
+      const newCounter = new Counter({
+        key,
+        seq: 0,
+      });
+      await newCounter.save();
+      return NextResponse.json(
+        {
+          success: true,
+          message: "Counter incremented",
+          data: newCounter,
+        },
+        { status: 200 }
+      );
+    }
     return NextResponse.json(
       {
         success: true,

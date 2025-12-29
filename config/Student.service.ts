@@ -1,6 +1,10 @@
 import { ICounter } from "@/models/CounterSchema";
 import dbConnect from "@/lib/DatabaseConnection";
 import { apiClient } from "@/helper/ApiClient";
+import { AppData } from "./appConfig";
+import { Student } from "@/types/models/student.model";
+import { StudentFormData } from "@/lib/validators/institute/add-student.validator";
+import { errorToast, promiseToast } from "@/components/custom/utils/Toast";
 
 type GenerateResult<T extends string> = {
   success: boolean;
@@ -20,12 +24,15 @@ export class StudentService {
     const response = await apiClient.get<{
       success: boolean;
       data: ICounter;
-    }>(`/api/institute/get-seq?institute_code=${institute_code}&key=${key}`);
+    }>(
+      `${AppData.routes.backend.api.institute.getSequence}?institute_code=${institute_code}&key=${key}`
+    );
+    console.log("Response", response);
     if (!response.success || !response.data) {
       throw new Error("Failed to get sequence");
     }
     const { seq } = response.data;
-    return seq;
+    return seq + 1;
   }
   /* --------------------------------------------
    * Student ID → INST-0001
@@ -59,9 +66,10 @@ export class StudentService {
         `ROLL:${year}:${course_code}:${institute_code}`,
         institute_code
       );
-
+      console.log("Sequence", seq, institute_code, course_code);
       return `${year}${course_code}${String(seq).padStart(4, "0")}`;
     } catch {
+      console.log("Failed to get sequence");
       return null;
     }
   }
@@ -82,6 +90,51 @@ export class StudentService {
 
       return `${institute_code}/${year}/${String(seq).padStart(4, "0")}`;
     } catch {
+      return null;
+    }
+  }
+  public async createStudent(
+    institute_code: string,
+    incomingPayload: StudentFormData
+  ) {
+    try {
+      const payload = {
+        ...incomingPayload,
+        fees: {
+          ...incomingPayload.fees,
+          detail:
+            incomingPayload.fees?.paidFees > 0
+              ? [
+                  {
+                    date: new Date(),
+                    amount: incomingPayload.fees.paidFees,
+                    method: "cash",
+                  },
+                ]
+              : [],
+        },
+      };
+
+      const request = apiClient.post<{
+        success: boolean;
+        data: Student;
+      }>(AppData.routes.backend.api.institute.createStudent, {
+        institute_code,
+        payload,
+      });
+
+      promiseToast(request, {
+        loading: "Creating student...",
+        success: "Student created successfully",
+        error: (err) => err?.message || "Error creating student",
+      });
+
+      const response = await request;
+
+      console.log("Student ServiceResponse", response);
+      return response.data;
+    } catch (error: any) {
+      console.log("Error creating student", error);
       return null;
     }
   }

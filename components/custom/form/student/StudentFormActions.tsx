@@ -53,9 +53,20 @@ export function FormActions<T extends FieldValues>({
 
   const isSubmitting = isLoading || form.formState.isSubmitting;
   const canReset = form.formState.isDirty && !isSubmitting;
-
   const handleReset = () => {
-    onReset ? onReset(form) : form.reset();
+    if (onReset) {
+      onReset(form);
+      return;
+    }
+
+    const allValues = form.getValues();
+    const studentId = allValues.auth?.studentId;
+    const registrationNo = allValues.academic?.registrationNo;
+
+    form.reset({
+      auth: { studentId },
+      academic: { registrationNo },
+    } as unknown as T);
   };
 
   return (
@@ -84,7 +95,7 @@ export function FormActions<T extends FieldValues>({
                 onClick={handleReset}
                 className={cn(
                   "inline-flex items-center justify-center gap-2",
-                  "bg-destructive text-destructive-foreground",
+                  "bg-destructive text-destructive-foreground hover:bg-destructive/90 ",
                   "transition-colors duration-200"
                 )}
               >

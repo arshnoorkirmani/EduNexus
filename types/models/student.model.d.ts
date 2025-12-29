@@ -1,3 +1,5 @@
+import { Document, Schema, Types } from "mongoose";
+
 export type StudentDocumentFile = {
   name: string;
   url: string;
@@ -42,9 +44,9 @@ export interface Student extends Document {
 
   institute: {
     instituteId: Schema.Types.ObjectId;
-    institute_code: string;
-    institute_logo: string;
-    institute_name: string;
+    instituteCode: string;
+    instituteLogo: string;
+    instituteName: string;
   };
 
   personal: {
@@ -56,6 +58,7 @@ export interface Student extends Document {
     mobile: string;
     email?: string;
     fatherName?: string;
+    motherName?: string;
     address?: {
       fullAddress?: string;
       line?: string;
@@ -68,17 +71,14 @@ export interface Student extends Document {
 
   academic: {
     rollNo: string;
-    timing: {
-      hour: number;
-      minute: number;
-    };
+    timing: string;
     registrationNo: string;
 
     admissionDate: Date;
     course?: {
       name: string;
       groupTitle?: string;
-      courseTitle?: string;
+      course_code?: string;
       baseFee?: number;
     };
   };
@@ -110,11 +110,19 @@ export interface Student extends Document {
     }[];
   };
 
+  currentStatus:
+    | "active"
+    | "inactive"
+    | "passed"
+    | "failed"
+    | "suspended"
+    | "dropout";
+
   statusHistory: {
-    status: StudentStatus;
+    status: string;
     date: Date;
     reason?: string;
-    updatedBy: ObjectId;
+    updatedBy: Schema.Types.ObjectId;
   }[];
 
   lastUpdatedBy?: Schema.Types.ObjectId;
