@@ -4,6 +4,7 @@ import { Teacher } from "@/types/models/teacher.model";
 import { User } from "@/types/models/user.model";
 import { PublicUser } from "@/types/api/helper/public-user";
 import { UserType } from "@/types/api/helper/next-auth";
+import { AppData } from "@/config/appConfig";
 
 export function publicUser(user: Institute, role: "institute"): PublicUser;
 export function publicUser(user: Student, role: "student"): PublicUser;
@@ -23,8 +24,10 @@ export function publicUser(
         role: "institute",
         name: institute.username ?? "Institute",
         email: institute.email,
-        profile_url: institute.information?.profile_url ?? null,
-        logo: institute.information?.logo ?? null,
+        profile_url:
+          institute.information.profile_url ??
+          AppData.default.institute.profile_url,
+        logo: institute.information?.logo ?? AppData.default.institute.logo,
         isVerified: institute.isVerified,
         isNew: !institute.isOnboarded,
         institute_name: institute.information?.institute_name ?? "Institute",
@@ -40,12 +43,12 @@ export function publicUser(
         role: "student",
         name: student.personal?.fullName ?? "Student",
         student_id: student.auth.studentId,
-        profile_url: student.documents?.profilePhoto?.url ?? null,
-        logo: null,
+        profile_url: student.personal.profile_url,
+        logo: AppData.default.institute.logo,
         isVerified: student.auth.verify.isVerified,
         isNew: false,
-        institute_name: student.institute.institute_name,
         institute_code: student.institute.institute_code,
+        institute_name: student.institute.institute_name,
       };
     }
 
@@ -57,12 +60,27 @@ export function publicUser(
         role: "teacher",
         name: teacher.personal?.name ?? "Teacher",
         teacher_id: teacher.auth.teacherId,
-        profile_url: teacher.documents?.profilePhoto ?? null,
-        logo: null,
+        profile_url: teacher.personal.profile_url,
+        logo: AppData.default.institute.logo,
         isVerified: teacher.auth.verify.isVerified,
         isNew: false,
-        institute_name: teacher.institute.institute_name,
         institute_code: teacher.institute.institute_code,
+        institute_name: teacher.institute.institute_name,
+      };
+    }
+    case "user": {
+      const baseUser = user as User;
+      return {
+        id: String(baseUser._id),
+        role: "user",
+        name: baseUser.personal?.name ?? "User",
+        userId: baseUser.auth.userId,
+        profile_url: baseUser.personal.profile_url,
+        logo: AppData.default.institute.logo,
+        isVerified: baseUser.auth.verify.isVerified,
+        isNew: false,
+        institute_name: baseUser.institute.institute_name,
+        institute_code: baseUser.institute.institute_code,
       };
     }
 

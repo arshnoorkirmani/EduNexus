@@ -1,14 +1,19 @@
+import { Teacher } from "./teacher.model";
 import { status } from "./institute.model";
 
 export interface TeacherProfile {
-  teacher_id: string | null;
-  name: string | null;
-  email: string | null;
-  mobile: string | null;
-  departmentId: string | null;
-  designation: string | null;
-  profile_url: string | null;
-  status: "active" | "pending" | "blocked";
+  _id: string | null;
+  auth: Teacher["auth"] | null;
+  institute: {
+    instituteId: string;
+    institute_name: string;
+    institute_code: string;
+  } | null;
+  personal: Teacher["personal"] | null;
+  professional: Teacher["professional"] | null;
+  documents: Teacher["documents"] | null;
+  permissions: Teacher["permissions"] | null;
+  status: Teacher["status"] | null;
 }
 
 export interface TeacherSlice {

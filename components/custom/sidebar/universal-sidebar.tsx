@@ -101,11 +101,11 @@ export default function ReadySidebar() {
     // ------------------------------
     if (role === "institute") {
       return {
-        name: institute?.username ?? `${AppData.app.name} Institute`,
+        name: institute?.username ?? `${AppData.app.name} User`,
         avatar:
           institute?.information?.profile_url ?? AppData.default.institute.logo,
         email: institute?.information?.email ?? "",
-        role: institute?.role ?? "institute",
+        role: "institute",
       };
     }
 
@@ -114,9 +114,11 @@ export default function ReadySidebar() {
     // ------------------------------
     if (role === "student") {
       return {
-        name: student?.name ?? "Student",
-        avatar: student?.profile_url ?? AppData.default.student.profile_url,
-        email: student?.email ?? "",
+        name: student?.profile.personal?.fullName ?? "Student",
+        avatar:
+          student?.profile.personal?.profile_url ??
+          AppData.default.student.profile_url,
+        email: student?.profile.auth?.studentId ?? "",
         role: "student",
       };
     }
@@ -126,9 +128,11 @@ export default function ReadySidebar() {
     // ------------------------------
     if (role === "teacher") {
       return {
-        name: teacher?.name ?? "Teacher",
-        avatar: teacher?.profile_url ?? AppData.default.teacher.profile_url,
-        email: teacher?.email ?? "",
+        name: teacher?.profile.personal?.fullName ?? "Teacher",
+        avatar:
+          teacher?.profile.personal?.profile_url ??
+          AppData.default.teacher.profile_url,
+        email: teacher?.profile.auth?.teacherId ?? "",
         role: "teacher",
       };
     }
@@ -137,9 +141,11 @@ export default function ReadySidebar() {
     // ------------------------------
     if (role === "user") {
       return {
-        name: user?.name ?? "User",
-        avatar: user?.profile_url ?? AppData.default.user.profile_url,
-        email: user?.email ?? "",
+        name: user?.profile.personal?.name ?? "User",
+        avatar:
+          user?.profile.personal?.profile_url ??
+          AppData.default.user.profile_url,
+        email: user?.profile.auth?.userId ?? "",
         role: "user",
       };
     }

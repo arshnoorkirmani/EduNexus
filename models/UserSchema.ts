@@ -15,18 +15,27 @@ const UserSchema = new Schema<User>(
       },
 
       verify: {
-        isVerify: { type: Boolean, default: false },
-        isActive: { type: Boolean, default: true },
+        isVerified: { type: Boolean, default: false },
+        isLoginEnabled: { type: Boolean, default: true },
       },
 
       lastLogin: { type: Date, default: null },
     },
 
-    // Only applies to teacher & student
-    instituteId: {
-      type: Schema.Types.ObjectId,
-      ref: "Institute",
-      default: null,
+    // Embedded institute details (denormalized)
+    institute: {
+      instituteId: {
+        type: Schema.Types.ObjectId,
+        ref: "Institute",
+        default: null,
+      },
+      institute_code: { type: String, default: "" },
+      institute_name: { type: String, default: "" },
+      owner_name: { type: String, default: "" },
+      owner_mobile: { type: String, default: "" },
+      owner_email: { type: String, default: "" },
+      owner_profile_url: { type: String, default: "" },
+      owner_logo: { type: String, default: "" },
     },
 
     personal: {
@@ -38,6 +47,7 @@ const UserSchema = new Schema<User>(
         enum: ["male", "female", "other"],
         default: "male",
       },
+      profile_url: { type: String, default: "" },
     },
     documents: {
       profilePhoto: { type: String, default: null },
@@ -47,7 +57,8 @@ const UserSchema = new Schema<User>(
 
     // Permission map (dynamic)
     permissions: {
-      type: Object,
+      type: Map,
+      of: Boolean,
       default: {},
     },
 
@@ -63,7 +74,7 @@ const UserSchema = new Schema<User>(
 // Indexes for speed
 UserSchema.index({ "auth.userId": 1 }, { unique: true });
 UserSchema.index({ "auth.userType": 1 });
-UserSchema.index({ instituteId: 1 });
+UserSchema.index({ "institute.instituteId": 1 });
 
 export const UserModel =
   mongoose.models.User || mongoose.model<User>("User", UserSchema);

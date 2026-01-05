@@ -1,32 +1,26 @@
 // store/slice/userSlice.ts
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-
-// ----------------------------------
-// TYPES
-// ----------------------------------
-export type UserRole = "institute" | "student" | "teacher" | "user";
-
-export interface UserState {
-  id: string | null;
-  name: string | null;
-  identifier: string | null; // email / student_id / teacher_id
-  avatar: string | null;
-  role: UserRole | null;
-  status: "active" | "pending" | "blocked" | null;
-  isAuthenticated: boolean;
-}
+import { UserProfile, UserSlice } from "@/types/models/user.slice";
 
 // ----------------------------------
 // INITIAL STATE
 // ----------------------------------
-const initialState: UserState = {
-  id: null,
-  name: null,
-  identifier: null,
-  avatar: null,
+const initialState: UserSlice = {
+  profile: {
+    _id: null,
+    auth: null,
+    institute: null,
+    personal: null,
+    documents: null,
+    permissions: null,
+    metadata: null,
+  },
+
+  loading: false,
+  error: null,
+  isAuthenticated: false,
   role: null,
   status: null,
-  isAuthenticated: false,
 };
 
 // ----------------------------------
@@ -36,9 +30,39 @@ export const userSlice = createSlice({
   name: "user",
   initialState,
   reducers: {
-    setUser(state, action: PayloadAction<Partial<UserState>>) {
-      Object.assign(state, action.payload);
-      state.isAuthenticated = true;
+    setUser(state, action: PayloadAction<Partial<UserSlice>>) {
+      // Merge top-level properties
+      if (action.payload.profile) {
+        state.profile = { ...state.profile, ...action.payload.profile };
+      }
+
+      // Update other top-level keys
+      if (action.payload.isAuthenticated !== undefined)
+        state.isAuthenticated = action.payload.isAuthenticated;
+      if (action.payload.role !== undefined) state.role = action.payload.role;
+      if (action.payload.status !== undefined)
+        state.status = action.payload.status;
+      if (action.payload.loading !== undefined)
+        state.loading = action.payload.loading;
+      if (action.payload.error !== undefined)
+        state.error = action.payload.error;
+
+      // Auto-set authenticated if ID is provided in profile
+      if (action.payload.profile?._id) {
+        state.isAuthenticated = true;
+      }
+    },
+
+    setUserProfile(state, action: PayloadAction<Partial<UserProfile>>) {
+      state.profile = { ...state.profile, ...action.payload };
+    },
+
+    setLoading(state, action: PayloadAction<boolean>) {
+      state.loading = action.payload;
+    },
+
+    setError(state, action: PayloadAction<string | null>) {
+      state.error = action.payload;
     },
 
     clearUser() {
@@ -47,5 +71,7 @@ export const userSlice = createSlice({
   },
 });
 
-export const { setUser, clearUser } = userSlice.actions;
+export const { setUser, setUserProfile, setLoading, setError, clearUser } =
+  userSlice.actions;
+
 export default userSlice.reducer;

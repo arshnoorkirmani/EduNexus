@@ -2,8 +2,8 @@ export interface PublicInstituteUser {
   id: string;
   role: "institute";
   name: string;
-  profile_url: string | null;
   logo: string | null;
+  profile_url: string;
   isVerified: boolean;
   isNew: boolean;
   institute_name: string;
@@ -15,8 +15,8 @@ export interface PublicStudentUser {
   id: string;
   role: "student";
   name: string;
-  profile_url: string | null;
   logo: string | null;
+  profile_url: string;
   isVerified: boolean;
   isNew: boolean;
   institute_name: string;
@@ -28,8 +28,8 @@ export interface PublicTeacherUser {
   id: string;
   role: "teacher";
   name: string;
-  profile_url: string | null;
   logo: string | null;
+  profile_url: string;
   isVerified: boolean;
   isNew: boolean;
   institute_name: string;
@@ -40,14 +40,14 @@ export interface PublicTeacherUser {
 export interface PublicBaseUser {
   id: string;
   role: "user";
+  userId: string;
   name: string;
-  profile_url: string | null;
   logo: string | null;
+  profile_url: string;
   isVerified: boolean;
   isNew: boolean;
   institute_name: string;
   institute_code: string;
-  email: string;
 }
 
 export type PublicUser =

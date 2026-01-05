@@ -44,9 +44,12 @@ export interface Student extends Document {
 
   institute: {
     instituteId: Schema.Types.ObjectId;
-    instituteCode: string;
-    instituteLogo: string;
-    instituteName: string;
+    institute_code: string;
+    institute_logo: string;
+    institute_name: string;
+    owner_name?: string;
+    owner_mobile?: string;
+    owner_email?: string;
   };
 
   personal: {
@@ -59,6 +62,7 @@ export interface Student extends Document {
     email?: string;
     fatherName?: string;
     motherName?: string;
+    profile_url: string;
     address?: {
       fullAddress?: string;
       line?: string;

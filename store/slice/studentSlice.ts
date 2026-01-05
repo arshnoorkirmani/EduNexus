@@ -1,7 +1,6 @@
 // store/slice/studentSlice.ts
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { fetchStudent } from "../thunks/student.thunks";
-import { status } from "@/types/models/institute.model";
+import { fetchStudent, updateStudentProfile } from "../thunks/student.thunks";
 import { StudentProfile, StudentSlice } from "@/types/models/studnet.slice";
 
 // ----------------------------------
@@ -9,29 +8,32 @@ import { StudentProfile, StudentSlice } from "@/types/models/studnet.slice";
 // ----------------------------------
 const initialState: StudentSlice = {
   profile: {
-    student_id: null,
-    name: null,
-    email: null,
-    mobile: null,
-    classId: null,
-    sectionId: null,
-    roll_no: null,
-    profile_url: null,
-    status: "pending",
+    _id: null,
+    auth: null,
+    institute: null,
+    personal: null,
+    academic: null,
+    permissions: null,
+    currentStatus: null,
+    statusHistory: null,
+    documents: [],
   },
 
   attendance: [],
   results: [],
 
   fees: {
-    due: 0,
+    totalFees: 0,
     paid: 0,
+    remainingFees: 0,
+    due: 0,
+    status: "pending",
     history: [],
   },
 
-  loading: true,
+  loading: true, // Start loading by default or use a specific init action
   error: null,
-  status: "pending",
+  status: "pending", // Default student status
 };
 
 // ----------------------------------
@@ -42,6 +44,7 @@ export const studentSlice = createSlice({
   initialState,
   reducers: {
     setStudentProfile(state, action: PayloadAction<Partial<StudentProfile>>) {
+      // Shallow merge of profile fields
       state.profile = { ...state.profile, ...action.payload };
     },
 
@@ -53,11 +56,18 @@ export const studentSlice = createSlice({
       state.results = action.payload;
     },
 
+    setStudentFees(state, action: PayloadAction<StudentSlice["fees"]>) {
+      state.fees = action.payload;
+    },
+
     resetStudentState() {
       return initialState;
     },
   },
   extraReducers: (builder) => {
+    // ------------------------------------------------------
+    // FETCH STUDENT
+    // ------------------------------------------------------
     builder
       .addCase(fetchStudent.pending, (state) => {
         state.loading = true;
@@ -65,9 +75,55 @@ export const studentSlice = createSlice({
       })
       .addCase(fetchStudent.fulfilled, (state, action) => {
         state.loading = false;
-        Object.assign(state, action.payload);
+        // Full state replacement/hydration from payload
+        // ensuring we map provided fields to the state structure
+        if (action.payload.profile) state.profile = action.payload.profile;
+        if (action.payload.attendance)
+          state.attendance = action.payload.attendance;
+        if (action.payload.results) state.results = action.payload.results;
+        if (action.payload.fees) state.fees = action.payload.fees;
+
+        // Sync root status if provided, otherwise fallback to profile status or keep existing
+        if (action.payload.status) {
+          state.status = action.payload.status;
+        } else if (action.payload.profile?.currentStatus) {
+          // Fallback mapping if root status isn't explicit but profile has it
+          // Casting might be needed if types don't perfectly align, but generally safe
+          state.status = action.payload.profile.currentStatus as any;
+        }
       })
       .addCase(fetchStudent.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      });
+
+    // ------------------------------------------------------
+    // UPDATE STUDENT PROFILE
+    // ------------------------------------------------------
+    builder
+      .addCase(updateStudentProfile.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateStudentProfile.fulfilled, (state, action) => {
+        state.loading = false;
+
+        // Handle partial profile updates
+        if (action.payload.profile) {
+          state.profile = { ...state.profile, ...action.payload.profile };
+        }
+
+        // Update other sections if they were included in the response (e.g., re-calculated fees)
+        if (action.payload.fees) {
+          state.fees = { ...state.fees, ...action.payload.fees };
+        }
+
+        // Update root status if changed
+        if (action.payload.status) {
+          state.status = action.payload.status;
+        }
+      })
+      .addCase(updateStudentProfile.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });
@@ -78,6 +134,7 @@ export const {
   setStudentProfile,
   setStudentAttendance,
   setStudentResults,
+  setStudentFees,
   resetStudentState,
 } = studentSlice.actions;
 

@@ -1,25 +1,53 @@
+import { Student, StudentDocument } from "./student.model";
+import { status } from "./institute.model";
+
 export interface StudentProfile {
-  student_id: string | null;
-  name: string | null;
-  email: string | null;
-  mobile: string | null;
-  classId: string | null;
-  sectionId: string | null;
-  roll_no: string | null;
-  profile_url: string | null;
-  status: "active" | "pending" | "blocked";
+  _id: string | null;
+  auth: Student["auth"] | null;
+  institute: {
+    instituteId: string;
+    institute_code: string;
+    institute_logo: string;
+    institute_name: string;
+    owner_name?: string;
+    owner_mobile?: string;
+    owner_email?: string;
+  } | null;
+  personal: Student["personal"] | null;
+  academic: Student["academic"] | null;
+  permissions: Student["permissions"] | null;
+  currentStatus: Student["currentStatus"] | null;
+  statusHistory:
+    | {
+        status: string;
+        date: Date | string;
+        reason?: string;
+        updatedBy: string;
+      }[]
+    | null;
+  documents: StudentDocument[];
 }
 
 export interface StudentSlice {
   profile: StudentProfile;
   attendance: any[];
   results: any[];
+
   fees: {
-    due: number;
+    totalFees: number;
     paid: number;
-    history: any[];
+    remainingFees: number;
+    due: number; // calculated or alias for remaining? Keeping for backward compat if needed, or mapping to remaining.
+    status: Student["fees"]["status"];
+    history: Student["fees"]["detail"];
   };
+
   loading: boolean;
   error: string | null;
+
+  // This status refers to the slice data loading state or the student status?
+  // In slice implementation it was used for loading state, but typed as 'status' ("active" | "pending" etc).
+  // Ideally this should be `RequestStatus` ("idle" | "loading" | "succeeded" | "failed").
+  // But strictly adhering to the file's existing import:
   status: status;
 }

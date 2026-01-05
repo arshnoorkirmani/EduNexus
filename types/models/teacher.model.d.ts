@@ -21,10 +21,12 @@ export interface Teacher extends Document {
     name: string;
     firstName: string;
     lastName?: string;
+    fullName: string;
     email?: string;
     mobile?: string;
     gender?: string;
     dob?: Date;
+    profile_url: string;
     address?: {
       line?: string;
       city?: string;

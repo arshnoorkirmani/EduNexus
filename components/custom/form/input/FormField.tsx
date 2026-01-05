@@ -17,6 +17,8 @@ import { DateInput } from "./date-input";
 import { PasswordInput } from "../PasswordInput";
 import { cn } from "@/lib/utils";
 import { useAppForm } from "../FormContext";
+import { Loader } from "lucide-react";
+import { forwardRef } from "react";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                       */
@@ -38,6 +40,7 @@ export interface FieldProps<T extends FieldValues> {
   type?: FieldType;
   placeholder?: string;
   disabled?: boolean;
+  loading?: boolean;
   className?: string;
   parentClassName?: string;
   /** UX helpers */
@@ -57,6 +60,7 @@ export function Field<T extends FieldValues>({
   placeholder,
   disabled = false,
   required = false,
+  loading = false,
   description,
   parentClassName,
   className,
@@ -66,7 +70,7 @@ export function Field<T extends FieldValues>({
     <FormField
       control={form.control}
       name={name}
-      render={({ field }) => {
+      render={({ field, fieldState }) => {
         const value = field.value ?? "";
 
         return (
@@ -84,14 +88,16 @@ export function Field<T extends FieldValues>({
             )}
 
             <FormControl>
-              {renderField({
-                type,
-                field,
-                value,
-                placeholder,
-                disabled: disabled || isLoading,
-                className,
-              })}
+              <FieldWithLoader
+                loading={loading}
+                type={type}
+                field={field}
+                value={value}
+                placeholder={placeholder}
+                disabled={disabled || isLoading}
+                className={className}
+                error={fieldState.error}
+              />
             </FormControl>
 
             {/* ERROR MESSAGE */}
@@ -106,79 +112,116 @@ export function Field<T extends FieldValues>({
 /* -------------------------------------------------------------------------- */
 /* Render Helper                                                               */
 /* -------------------------------------------------------------------------- */
-
-function renderField({
-  type,
-  field,
-  value,
-  placeholder,
-  disabled,
-  className,
-}: {
+export interface FieldWithLoaderProps {
   type: FieldType;
-  field: any;
-  value: any;
+  field?: any;
+  value?: any;
   placeholder?: string;
   disabled?: boolean;
+  loading?: boolean;
   className?: string;
-}) {
-  switch (type) {
-    case "password":
-      return (
-        <PasswordInput
-          {...field}
-          value={value}
-          placeholder={placeholder}
-          disabled={disabled}
-          iconShow={false}
-          className={cn(className, disabled && "text-base disabled:opacity-70")}
-        />
-      );
-    case "textarea":
-      return (
-        <Textarea
-          {...field}
-          value={value}
-          placeholder={placeholder}
-          disabled={disabled}
-          className={cn(
-            "resize-none",
-            className,
-            disabled && "text-base disabled:opacity-70"
-          )}
-        />
-      );
-
-    case "time":
-      return (
-        <TimeInput
-          value={field.value}
-          onChange={field.onChange}
-          disabled={disabled}
-          className={cn(className, disabled && "text-base disabled:opacity-70")}
-        />
-      );
-
-    case "date":
-      return (
-        <DateInput
-          value={field.value}
-          onChange={field.onChange}
-          disabled={disabled}
-          className={cn(className, disabled && "text-base disabled:opacity-70")}
-        />
-      );
-
-    default:
-      return (
-        <Input
-          {...field}
-          value={value}
-          type={type}
-          placeholder={placeholder}
-          disabled={disabled}
-          className={cn(className, disabled && "text-base disabled:opacity-70")}
-        />
-      );
-  }
+  error?: any;
 }
+
+export const FieldWithLoader = forwardRef<
+  HTMLInputElement,
+  FieldWithLoaderProps
+>(
+  (
+    {
+      type,
+      field,
+      value,
+      placeholder,
+      disabled = false,
+      loading = false,
+      className,
+      error,
+    },
+    ref
+  ) => {
+    const commonClass = cn(
+      className,
+      (disabled || loading) &&
+        "text-base disabled:opacity-70 pointer-events-none",
+      error && "border-destructive focus-visible:ring-destructive/20"
+    );
+
+    return (
+      <div className="relative w-full">
+        {(() => {
+          switch (type) {
+            case "password":
+              return (
+                <PasswordInput
+                  ref={ref}
+                  {...field}
+                  value={value}
+                  placeholder={placeholder}
+                  disabled={disabled || loading}
+                  iconShow={false}
+                  error={!!error}
+                  aria-invalid={!!error}
+                  className={commonClass}
+                />
+              );
+
+            case "textarea":
+              return (
+                <Textarea
+                  {...field}
+                  value={value}
+                  placeholder={placeholder}
+                  disabled={disabled || loading}
+                  aria-invalid={!!error}
+                  className={cn("resize-none", commonClass)}
+                />
+              );
+
+            case "time":
+              return (
+                <TimeInput
+                  value={field?.value}
+                  onChange={field?.onChange}
+                  disabled={disabled || loading}
+                  aria-invalid={!!error}
+                  className={commonClass}
+                />
+              );
+
+            case "date":
+              return (
+                <DateInput
+                  value={field?.value}
+                  onChange={field?.onChange}
+                  disabled={disabled || loading}
+                  aria-invalid={!!error}
+                  className={commonClass}
+                />
+              );
+
+            default:
+              return (
+                <Input
+                  ref={ref}
+                  {...field}
+                  value={value}
+                  type={type}
+                  aria-invalid={!!error}
+                  placeholder={placeholder}
+                  disabled={disabled || loading}
+                  className={commonClass}
+                />
+              );
+          }
+        })()}
+
+        {loading && (
+          <Loader className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-muted-foreground" />
+        )}
+      </div>
+    );
+  }
+);
+
+FieldWithLoader.displayName = "FieldWithLoader";

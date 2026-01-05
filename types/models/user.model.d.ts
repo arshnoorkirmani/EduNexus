@@ -1,4 +1,4 @@
-import { Document, Schema } from "mongoose";
+import { Document, Schema, Types } from "mongoose";
 
 export interface User extends Document {
   _id: Types.ObjectId | string;
@@ -14,13 +14,23 @@ export interface User extends Document {
     lastLogin: Date | null;
   };
 
-  instituteId?: Schema.Types.ObjectId; // only for teacher & student
+  institute: {
+    instituteId?: Schema.Types.ObjectId;
+    institute_code: string;
+    institute_name: string;
+    owner_name: string;
+    owner_mobile: string;
+    owner_email: string;
+    owner_profile_url: string;
+    owner_logo: string;
+  }; // only for teacher & student
 
   personal: {
     name: string;
     avatar?: string;
     mobile?: string;
     gender?: "male" | "female" | "other";
+    profile_url: string;
   };
 
   documents: {

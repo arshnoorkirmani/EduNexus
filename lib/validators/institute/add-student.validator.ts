@@ -66,7 +66,6 @@ export const studentFormSchema = z
     /* ================= INSTITUTE ================= */
 
     institute: z.object({
-      instituteId: objectId,
       instituteCode: z
         .string({ message: "Institute code is required" })
         .trim()
@@ -78,6 +77,8 @@ export const studentFormSchema = z
       instituteName: z
         .string({ message: "Institute name is required" })
         .min(1, { message: "Institute name is required" }),
+      address: z.string().optional(),
+      ownerName: z.string().optional(),
     }),
 
     /* ================= PERSONAL ================= */
@@ -117,6 +118,10 @@ export const studentFormSchema = z
         pincode: z.string().optional(),
         country: z.string().default("India"),
       }),
+      photoUrl: z
+        .string()
+        .url({ message: "Photo URL must be a valid URL" })
+        .optional(),
     }),
 
     /* ================= ACADEMIC ================= */
@@ -142,7 +147,10 @@ export const studentFormSchema = z
 
           groupTitle: z.string().optional(),
           course_code: z.string().optional(),
-
+          duration: z.object({
+            unit: z.string(),
+            value: z.number(),
+          }),
           baseFee: z
             .number({ message: "Base fee must be a number" })
             .nonnegative({ message: "Base fee cannot be negative" })

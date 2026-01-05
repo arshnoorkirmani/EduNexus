@@ -7,14 +7,14 @@ import { TeacherProfile, TeacherSlice } from "@/types/models/teacher.slice";
 // ----------------------------------
 const initialState: TeacherSlice = {
   profile: {
-    teacher_id: null,
-    name: null,
-    email: null,
-    mobile: null,
-    departmentId: null,
-    designation: null,
-    profile_url: null,
-    status: "pending",
+    _id: null,
+    auth: null,
+    institute: null,
+    personal: null,
+    professional: null,
+    documents: null,
+    permissions: null,
+    status: null,
   },
 
   attendance: [],

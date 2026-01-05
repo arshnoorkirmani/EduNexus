@@ -25,8 +25,9 @@ function getIdentifier(user: PublicUser): string {
     case "teacher":
       return user.teacher_id;
     case "institute":
-    case "user":
       return user.email;
+    case "user":
+      return user.userId;
     default:
       return "unknown";
   }
@@ -50,10 +51,7 @@ export function useAuth() {
       avatar: base.profile_url ?? undefined,
       institute_name: base.institute_name,
       institute_code: base.institute_code,
-      email:
-        base.role === "user" || base.role === "institute"
-          ? base.email
-          : undefined,
+      email: base.role === "institute" ? base.email : undefined,
       isVerified: base.isVerified,
       isNew: base.isNew,
     };

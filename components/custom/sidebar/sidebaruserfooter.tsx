@@ -50,12 +50,14 @@ export function SidebarUserFooter() {
       id: session.user.id,
       name: session.user.name,
       identifier:
-        session.user.role === "institute" || session.user.role === "user"
-          ? (session.user as PublicInstituteUser | PublicBaseUser).email
+        session.user.role === "institute"
+          ? (session.user as PublicInstituteUser).email
           : session.user.role === "student"
           ? (session.user as PublicStudentUser).student_id
           : session.user.role === "teacher"
           ? (session.user as PublicTeacherUser).teacher_id
+          : session.user.role === "user"
+          ? (session.user as PublicBaseUser).userId
           : "unknown",
 
       avatar: session.user.profile_url ?? undefined,

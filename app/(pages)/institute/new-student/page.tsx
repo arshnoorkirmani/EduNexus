@@ -30,9 +30,10 @@ export default function AddStudentPage() {
         },
       },
       institute: {
-        instituteId: "",
         instituteCode: "",
         instituteName: "",
+        address: "",
+        ownerName: "",
       },
       personal: {
         firstName: "",

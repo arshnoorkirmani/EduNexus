@@ -34,10 +34,9 @@ import { DocumentUploadCard } from "@/components/custom/form/student/DoucmentUpl
 import { cn } from "@/lib/utils";
 import { studentService } from "@/config/Student.service";
 import { useAppDispatch, useAppSelector } from "@/store";
-import axios from "axios";
 import { fetchInstituteCourses } from "@/store/thunks/institute.thunks";
-import { InstituteConf } from "@/config/InstituteClient";
 import { promiseToast } from "../../utils/Toast";
+import PrintandImagePopup from "../../utils/printandImagePopup";
 const dobToPassword = (dob: string | Date) => {
   const date = new Date(dob);
   if (isNaN(date.getTime())) return "";
@@ -50,6 +49,9 @@ const dobToPassword = (dob: string | Date) => {
 };
 
 export default function AddStudentPage() {
+  const [isStudentIdLoading, setIsStudentIdLoading] = useState(true);
+  const [isRegistrationNoLoading, setIsRegistrationNoLoading] = useState(true);
+  const [isRollNoLoading, setIsRollNoLoading] = useState(false);
   const [courses, setCourses] = useState<any[]>([]);
   const [courseLoading, setCourseLoading] = useState(true);
   const { form, formId, setIsLoading, isLoading } =
@@ -58,7 +60,6 @@ export default function AddStudentPage() {
   const dispatch = useAppDispatch();
   const institute = useAppSelector((state) => state.institute);
   const { user } = useAuth();
-
   /* ================================================= */
   /* ================= DERIVED STATE ================= */
   /* ================================================= */
@@ -137,6 +138,10 @@ export default function AddStudentPage() {
             value: item.course_code.toLowerCase(), // This acts as the selection ID
 
             // Extra data for form population
+            duration: {
+              unit: item.duration?.unit,
+              value: item.duration?.value,
+            },
             courseName: item.course_name,
             course_code: item.course_code,
             groupTitle: item.category,
@@ -188,18 +193,25 @@ export default function AddStudentPage() {
     );
     (async () => {
       if (!institute.information.institute_code) return;
-      const rollNo = await studentService.generateRollNo(
-        institute.information.institute_code,
-        selectedOption.course_code
-      );
+      setIsRollNoLoading(true);
+      const rollNo = await studentService
+        .generateRollNo(
+          institute.information.institute_code,
+          selectedOption.course_code
+        )
+        .finally(() => {
+          setIsRollNoLoading(false);
+        });
       form.setValue("academic.rollNo", rollNo ? rollNo : "");
     })();
     if (selectedOption) {
       // 1. Populate full course details
       form.setValue("academic.course.course_code", selectedOption.course_code);
       form.setValue("academic.course.groupTitle", selectedOption.groupTitle);
+      // Duration
+      form.setValue("academic.course.duration", selectedOption.duration);
+      // Fees
       form.setValue("academic.course.baseFee", selectedOption.baseFee);
-      const currentTotal = form.getValues("fees.totalFees");
       form.setValue("fees.totalFees", selectedOption.baseFee);
       form.setValue("fees.remainingFees", selectedOption.baseFee);
       form.setValue("fees.paidFees", 0);
@@ -220,9 +232,17 @@ export default function AddStudentPage() {
 
     const generate = async () => {
       try {
+        setIsStudentIdLoading(true);
+        setIsRegistrationNoLoading(true);
         const [studentId, registrationNo] = await Promise.all([
-          studentService.generateStudentId(user.institute_code),
-          studentService.generateRegistrationNo(user.institute_code),
+          studentService.generateStudentId(user.institute_code).finally(() => {
+            setIsStudentIdLoading(false);
+          }),
+          studentService
+            .generateRegistrationNo(user.institute_code)
+            .finally(() => {
+              setIsRegistrationNoLoading(false);
+            }),
         ]);
         console.log("studentId", studentId);
         console.log("registrationNo", registrationNo);
@@ -245,9 +265,16 @@ export default function AddStudentPage() {
             shouldDirty: false,
           }
         );
-        form.setValue("institute.instituteId", institute?.id ?? "", {
+        form.setValue("institute.instituteName", institute?.username ?? "", {
           shouldDirty: false,
         });
+        form.setValue(
+          "institute.address",
+          institute?.information.address ?? "",
+          {
+            shouldDirty: false,
+          }
+        );
         form.setValue(
           "institute.instituteName",
           institute?.information.institute_name ?? "",
@@ -316,10 +343,8 @@ export default function AddStudentPage() {
     setIsLoading(true);
     console.log("Student Payload", payload);
     // Call service
-    const request = studentService.createStudent(code, payload).then((res) => {
-      if (!res) throw new Error("Failed to create student");
-      return res;
-    });
+    const request = await studentService.createStudent(code, payload);
+    console.log("Student Request", request);
     try {
       // Optional: Redirect or reset form here
     } finally {
@@ -353,6 +378,7 @@ export default function AddStudentPage() {
             placeholder="Auto-generated student ID"
             required
             disabled
+            loading={isStudentIdLoading}
           />
           <Field
             form={form}
@@ -524,6 +550,7 @@ export default function AddStudentPage() {
             label="Registration No"
             placeholder="Registration number"
             disabled
+            loading={isRegistrationNoLoading}
           />
           <Field
             form={form}
@@ -531,6 +558,7 @@ export default function AddStudentPage() {
             label="Roll No"
             placeholder="Auto-generated roll number (according to course)"
             disabled
+            loading={isRollNoLoading}
           />
 
           <SearchableSelectField
@@ -662,6 +690,11 @@ export function Section({
             {description}
           </p>
         )}
+        {/* <PrintandImagePopup
+          title="Student Id Card"
+          description="Print and Downlode Student Id Card"
+          open={true}
+        /> */}
       </CardHeader>
 
       <CardContent
@@ -676,7 +709,7 @@ export function Section({
     </Card>
   );
 }
-type PermissionPath =
+type StudentPermissionPath =
   | "superAccess"
   | "profile.show"
   | "profile.edit"
@@ -694,7 +727,7 @@ type PermissionPath =
 type Props = {
   form: UseFormReturn<StudentFormData>;
 };
-export const PERMISSIONS = [
+export const StudentPermission = [
   {
     title: "Profile",
     items: [
@@ -828,7 +861,7 @@ export function StudentPermissionSection({ form }: Props) {
         // <Card>
         //   <CardContent>
         <div className="space-y-8">
-          {PERMISSIONS.map((group) => (
+          {StudentPermission.map((group) => (
             <section
               key={group.title}
               className="

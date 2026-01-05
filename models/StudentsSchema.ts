@@ -64,6 +64,10 @@ const StudentSchema = new Schema<Student>(
         name: String,
         groupTitle: String,
         course_code: String,
+        duration: {
+          unit: String,
+          value: Number,
+        },
         baseFee: Number,
       },
     },

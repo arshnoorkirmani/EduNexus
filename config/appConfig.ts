@@ -149,19 +149,19 @@ export const AppData = {
   },
   default: {
     institute: {
-      logo: "https://cdn-icons-png.flaticon.com/512/3177/3177440.png",
+      logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR9_pDLvqwqAtarClfozs84DMoz-KreGeP1cw&s",
       profile_url:
         "https://fra.cloud.appwrite.io/v1/storage/buckets/67d2bdba0038ff3295fa/files/68f7822e00337f611ca1/view?project=67d2bc76002d39d36196",
     },
     student: {
       logo: "https://cdn-icons-png.flaticon.com/512/3177/3177440.png",
       profile_url:
-        "https://fra.cloud.appwrite.io/v1/storage/buckets/67d2bdba0038ff3295fa/files/68f7822e00337f611ca1/view?project=67d2bc76002d39d36196",
+        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQTfr-VGQmG3nOKJGZ9rviTPOJ4RZb1L3qUGQ&s",
     },
     teacher: {
       logo: "https://cdn-icons-png.flaticon.com/512/3177/3177440.png",
       profile_url:
-        "https://fra.cloud.appwrite.io/v1/storage/buckets/67d2bdba0038ff3295fa/files/68f7822e00337f611ca1/view?project=67d2bc76002d39d36196",
+        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQTfr-VGQmG3nOKJGZ9rviTPOJ4RZb1L3qUGQ&s",
     },
     user: {
       logo: "https://cdn-icons-png.flaticon.com/512/3177/3177440.png",

@@ -62,6 +62,9 @@ export interface Institute extends Document {
     institute_name: string;
     short_name?: string | null;
     institute_code?: string | null;
+    owner_name?: string;
+    owner_mobile?: string;
+    owner_email?: string;
 
     address?: string | null;
     city?: string | null;
