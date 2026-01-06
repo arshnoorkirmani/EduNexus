@@ -37,10 +37,8 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 <!-- ============================================================================ -->
 
-npm install next-themes
+===================================
 npx shadcn@latest add sonner
-npm install @reduxjs/toolkit
-npm install react-redux
 npx shadcn@latest add button
 npx shadcn@latest add navigation-menu
 npx shadcn@latest add popover
@@ -48,6 +46,11 @@ npx shadcn@latest add avatar
 npx shadcn@latest add card
 npx shadcn@latest add separator
 npx shadcn@latest add form
+npx shadcn@latest add sidebar
+========================================
+npm install next-themes
+npm install @reduxjs/toolkit
+npm install react-redux
 npm install zod
 npm install usehooks-ts
 npm install react-hook-form

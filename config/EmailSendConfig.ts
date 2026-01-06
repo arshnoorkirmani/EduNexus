@@ -1,6 +1,7 @@
 import { apiClient } from "@/helper/ApiClient";
 import { EmailSenderConfigResponse } from "@/types/api/helper/utils";
 import bcrypt from "bcryptjs";
+import { AppData } from "./appConfig";
 
 class EmailSenderConfig {
   private expiryInSeconds: number;
@@ -11,7 +12,7 @@ class EmailSenderConfig {
     this.expiryInSeconds = Number(process.env.CODE_EXPIRY_TIME ?? 600);
     this.bcryptRounds = Number(process.env.OTP_HASH_SALT_ROUNDS ?? 10);
 
-    const endpoint = process.env.EMAIL_SENDER_ENDPOINT || "/api/send-email";
+    const endpoint = AppData.routes.backend.api.sendEmail || "/api/send-email";
 
     // Build absolute URL on server, allow relative on client
     if (typeof window === "undefined") {
@@ -189,6 +190,39 @@ class EmailSenderConfig {
 
       const finalSubject = subject ?? fallbackSubjectMap[purpose];
 
+      // -------------------------------------------------------------
+      // SERVER-SIDE DIRECT SEND (Bypass API Call)
+      // -------------------------------------------------------------
+      if (typeof window === "undefined") {
+        const nodemailer = (await import("nodemailer")).default;
+
+        const transporter = nodemailer.createTransport({
+          host: process.env.SMTP_EMAIL_HOST || "smtp.gmail.com",
+          port: Number(process.env.SMTP_EMAIL_PORT) || 587,
+          secure: process.env.SMTP_EMAIL_SECURE === "true",
+          auth: {
+            user: process.env.SMTP_EMAIL_USER,
+            pass: process.env.SMTP_EMAIL_PASS,
+          },
+        });
+
+        const info = await transporter.sendMail({
+          from: `${process.env.NEXT_PUBLIC_APP_NAME} <${process.env.SMTP_EMAIL_FROM}>`,
+          to,
+          subject: finalSubject,
+          html,
+        });
+
+        return {
+          success: true,
+          message: "Email sent successfully",
+          data: { apiResponse: info, code, expiry },
+        };
+      }
+
+      // -------------------------------------------------------------
+      // CLIENT-SIDE API CALL
+      // -------------------------------------------------------------
       const response = await apiClient.post(this.apiUrl, {
         to,
         subject: finalSubject,

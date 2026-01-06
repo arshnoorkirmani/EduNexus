@@ -2,22 +2,13 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import dbConnect from "@/lib/DatabaseConnection";
-import InstituteModel from "@/models/InstituteSchema";
-import { StudentModel } from "@/models/StudentsSchema";
-import { TeacherModel } from "@/models/TeacherSchema";
-import { User as UserType } from "next-auth";
+import { User as AuthUser } from "next-auth";
 import { saveLoginActivity } from "@/lib/saveLoginActivity";
-
-// Utility: limit returned user fields
-const publicUser = (user: any, role: string) => ({
-  _id: String(user._id),
-  role,
-  name: user.name || user.username || "User",
-  email: user.email || null,
-  institute_id: user.institute_id ? String(user.institute_id) : null,
-  identifier: user.email || user.student_id || user.teacher_id,
-});
-
+import InstituteModel from "@/models/InstituteSchema";
+import { TeacherModel } from "@/models/TeacherSchema";
+import { StudentModel } from "@/models/StudentsSchema";
+import { publicUser } from "./publicUser";
+import { PublicUser } from "@/types/api/helper/public-user";
 export const authOptions: NextAuthOptions = {
   providers: [
     // ======================================================
@@ -26,19 +17,34 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       id: "institute-login",
       name: "Institute",
+
       credentials: {
-        email: {},
-        password: {},
+        email: { label: "Email", type: "text" },
+        password: { label: "Password", type: "password" },
       },
-      async authorize(credentials, req): Promise<UserType | null> {
-        if (!credentials?.email || !credentials?.password)
+
+      async authorize(credentials, req): Promise<PublicUser | null> {
+        if (!credentials?.email || !credentials?.password) {
           throw new Error("Email & password required.");
-        console.log("Credentials Institute", credentials);
+        }
+
         await dbConnect();
 
         const institute = await InstituteModel.findOne(
           { email: credentials.email },
-          { email: 1, password: 1, isVerified: 1, name: 1 }
+          {
+            email: 1,
+            password: 1,
+            isVerified: 1,
+            isOnboarded: 1,
+            // correct fields:
+            username: 1,
+            "information.logo": 1,
+            "information.profile_url": 1,
+            "information.institute_name": 1,
+            "information.institute_code": 1,
+            "information.short_name": 1,
+          }
         );
 
         if (!institute) throw new Error("Institute not found.");
@@ -49,7 +55,7 @@ export const authOptions: NextAuthOptions = {
           credentials.password,
           institute.password
         );
-        console.log("Institute found:", institute, isValid);
+
         if (!isValid) throw new Error("Invalid password.");
 
         // update lastLogin
@@ -65,123 +71,104 @@ export const authOptions: NextAuthOptions = {
           userAgent: req?.headers?.["user-agent"]?.toString() || "",
         });
 
-        return publicUser(institute, "institute") as unknown as UserType;
+        // ---------------------------
+        //  RETURN FULL TYPED USER
+        // ---------------------------
+        return publicUser(institute, "institute");
       },
     }),
 
-    // ======================================================
-    // 2) STUDENT LOGIN
-    // ======================================================
-    CredentialsProvider({
-      id: "student-login",
-      name: "Student",
-      credentials: {
-        institute_id: {},
-        student_id: {},
-        password: {},
-      },
-      async authorize(credentials, req): Promise<UserType | null> {
-        if (
-          !credentials?.institute_id ||
-          !credentials?.student_id ||
-          !credentials?.password
-        )
-          throw new Error("All fields required.");
-
-        await dbConnect(credentials.institute_id);
-
-        const student = await StudentModel.findOne(
-          { student_id: credentials.student_id },
-          {
-            student_id: 1,
-            password: 1,
-            verify: 1,
-            name: 1,
-            institute_id: 1,
-          }
-        );
-
-        if (!student) throw new Error("Student not found.");
-        if (!student.verify?.isActive)
-          throw new Error("Your account is deactivated. Contact institute.");
-
-        const isValid = await bcrypt.compare(
-          credentials.password,
-          student.password
-        );
-        if (!isValid) throw new Error("Invalid password.");
-
-        // update lastLogin
-        student.lastLogin = new Date();
-        await student.save();
-
-        await saveLoginActivity({
-          user: student,
-          role: "student",
-          institute_id: student.institute_id.toString(),
-          ip: req?.headers?.["x-forwarded-for"]?.toString() || "",
-          userAgent: req?.headers?.["user-agent"]?.toString() || "",
-        });
-
-        return publicUser(student, "student") as unknown as UserType;
-      },
-    }),
-
-    // ======================================================
-    // 3) TEACHER LOGIN
-    // ======================================================
+    // =======================
+    // 2) TEACHER LOGIN
+    // =======================
     CredentialsProvider({
       id: "teacher-login",
       name: "Teacher",
-      credentials: {
-        institute_id: {},
-        teacher_id: {},
-        password: {},
-      },
-      async authorize(credentials, req): Promise<UserType | null> {
-        if (
-          !credentials?.institute_id ||
-          !credentials?.teacher_id ||
-          !credentials?.password
-        )
-          throw new Error("All fields required.");
 
-        await dbConnect(credentials.institute_id);
+      credentials: {
+        teacherId: { label: "Teacher ID", type: "text" },
+        password: { label: "Password", type: "password" },
+      },
+
+      async authorize(credentials, req): Promise<PublicUser | null> {
+        if (!credentials?.teacherId || !credentials?.password)
+          throw new Error("Teacher ID and password required.");
+
+        await dbConnect();
 
         const teacher = await TeacherModel.findOne(
-          { teacher_id: credentials.teacher_id },
-          {
-            teacher_id: 1,
-            password: 1,
-            verify: 1,
-            name: 1,
-            institute_id: 1,
-          }
+          { "auth.teacherId": credentials.teacherId },
+          { auth: 1, personal: 1, documents: 1, institute: 1 }
         );
 
         if (!teacher) throw new Error("Teacher not found.");
-        if (!teacher.verify?.isActive)
-          throw new Error("Your account is deactivated. Contact institute.");
+        if (!teacher.auth.verify.isActive) throw new Error("Teacher inactive.");
 
-        const isValid = await bcrypt.compare(
+        const valid = await bcrypt.compare(
           credentials.password,
-          teacher.password
+          teacher.auth.password
         );
-        if (!isValid) throw new Error("Invalid password.");
+        if (!valid) throw new Error("Invalid password.");
 
-        // update lastLogin
-        teacher.lastLogin = new Date();
+        teacher.auth.lastLogin = new Date();
         await teacher.save();
 
         await saveLoginActivity({
           user: teacher,
           role: "teacher",
-          institute_id: teacher.institute_id.toString(),
+          institute_id: String(teacher.institute.instituteId),
           ip: req?.headers?.["x-forwarded-for"]?.toString() || "",
           userAgent: req?.headers?.["user-agent"]?.toString() || "",
         });
 
-        return publicUser(teacher, "teacher") as unknown as UserType;
+        return publicUser(teacher, "teacher");
+      },
+    }),
+
+    // =======================
+    // 3) STUDENT LOGIN
+    // =======================
+    CredentialsProvider({
+      id: "student-login",
+      name: "Student",
+
+      credentials: {
+        studentId: { label: "Student ID", type: "text" },
+        password: { label: "Password", type: "password" },
+      },
+
+      async authorize(credentials, req): Promise<PublicUser | null> {
+        if (!credentials?.studentId || !credentials?.password)
+          throw new Error("Student ID and password required.");
+
+        await dbConnect();
+
+        const student = await StudentModel.findOne(
+          { "auth.studentId": credentials.studentId },
+          { auth: 1, personal: 1, documents: 1, institute: 1 }
+        );
+
+        if (!student) throw new Error("Student not found.");
+        if (!student.auth.verify.isActive) throw new Error("Account inactive.");
+
+        const valid = await bcrypt.compare(
+          credentials.password,
+          student.auth.password
+        );
+        if (!valid) throw new Error("Invalid password.");
+
+        student.auth.lastLogin = new Date();
+        await student.save();
+
+        await saveLoginActivity({
+          user: student,
+          role: "student",
+          institute_id: String(student.institute.instituteId),
+          ip: req?.headers?.["x-forwarded-for"]?.toString() || "",
+          userAgent: req?.headers?.["user-agent"]?.toString() || "",
+        });
+
+        return publicUser(student, "student");
       },
     }),
   ],
@@ -205,24 +192,15 @@ export const authOptions: NextAuthOptions = {
     },
 
     async jwt({ token, user }) {
+      console.log("user", user, "token", token);
       if (user) {
-        token._id = user._id;
-        token.role = user.role;
-        token.name = user.name;
-        token.identifier = user.identifier;
-        token.institute_id = user.institute_id;
+        token.user = user;
       }
       return token;
     },
-
     async session({ session, token }) {
-      session.user = {
-        _id: token._id,
-        role: token.role,
-        name: token.name,
-        identifier: token.identifier,
-        institute_id: token.institute_id,
-      };
+      console.log("session", session, "token", token);
+      session.user = token.user as PublicUser;
       return session;
     },
   },
@@ -232,4 +210,4 @@ export const authOptions: NextAuthOptions = {
   },
 
   secret: process.env.NEXTAUTH_SECRET,
-};
+} satisfies NextAuthOptions;

@@ -5,8 +5,8 @@ export default function page() {
   return (
     <div>
       <UniversalLogin userType="institute" />
-      <UniversalLogin userType="student" />
-      <UniversalLogin userType="teacher" />
+      {/* <UniversalLogin userType="student" />
+      <UniversalLogin userType="teacher" /> */}
     </div>
   );
 }

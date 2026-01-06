@@ -11,6 +11,7 @@ import {
   InstituteCodeResponse,
 } from "@/types/api/institute/institute-api";
 import { signIn } from "next-auth/react";
+import { AppData } from "./appConfig";
 // import { ApiResponse }
 class Institute {
   private IGNORE_WORDS: string[];
@@ -101,7 +102,7 @@ class Institute {
   ): Promise<ApiResponse<InstituteCheckEmailResponse>> {
     try {
       const res = await apiClient.get<ApiResponse<InstituteCheckEmailResponse>>(
-        "institute/check-email",
+        AppData.routes.backend.api.institute.checkEmail,
         { email }
       );
 
@@ -125,7 +126,7 @@ class Institute {
     try {
       const result = await apiClient.post<
         ApiResponse<{ institute_id: string; institute_name: string }>
-      >("institute", values);
+      >(AppData.routes.backend.api.institute.register, values);
 
       if (!result.success) {
         errorToast(result.error || "Registration failed");
@@ -167,7 +168,7 @@ class Institute {
         email: values.email,
         password: values.password,
       });
-      console.log("Login response:", response);
+      console.log("Login response:", response); //remove
 
       // ❌ Invalid credentials → NextAuth sets response.error
       if (response?.error) {
@@ -203,11 +204,11 @@ class Institute {
     email: string
   ): Promise<ApiResponse<any>> {
     const payload = { code, identifier: email };
-    console.log("InstituteConf - request payload:", payload);
+    console.log("InstituteConf - request payload:", payload); //remove
 
     // 1️⃣ Create the request promise (typed correctly)
     const request = apiClient.post<ApiResponse<any>>(
-      "institute/verify-code",
+      AppData.routes.backend.api.institute.verifyCode,
       payload
     );
 
@@ -247,14 +248,14 @@ class Institute {
     };
 
     try {
-      console.log("InstituteConf - resend payload:", payload);
+      console.log("InstituteConf - resend payload:", payload); //remove
 
       const response = await apiClient.post<ApiResponse<any>>(
-        "institute/send-code",
+        AppData.routes.backend.api.institute.sendCode,
         payload
       );
 
-      console.log("InstituteConf - resend response:", response);
+      console.log("InstituteConf - resend response:", response); //remove
 
       if (!response?.success) {
         errorToast(response?.error || "Unable to resend code");
@@ -270,7 +271,7 @@ class Institute {
         }
       );
     } catch (err: any) {
-      console.log("InstituteConf - resend caught error:", err);
+      console.log("InstituteConf - resend caught error:", err); //remove
 
       errorToast(err?.message || "Error resending code");
 
@@ -280,6 +281,181 @@ class Institute {
         data: null,
       };
     }
+  }
+  /**
+ * ---------------------------------------------------------
+ * Fetch Institute (email | _id | code) + optional fields
+ * ---------------------------------------------------------
+
+ */
+  public async fetchInstitute(
+    identifier: string,
+    fields?: string[]
+  ): Promise<ApiResponse<any>> {
+    try {
+      if (!identifier || typeof identifier !== "string") {
+        return { success: false, error: "Identifier is required", data: null };
+      }
+
+      const params: any = { identifier };
+
+      // Convert fields array → comma string:  "name,email,profile.url"
+      if (fields?.length) {
+        params.fieldsParam = fields.join(",");
+      }
+
+      // ---------------------------------------------------------
+      // API CALL
+      // ---------------------------------------------------------
+      const response = await apiClient.get<ApiResponse<any>>(
+        AppData.routes.backend.api.institute.getInstitute,
+        params
+      );
+
+      if (!response.success) {
+        errorToast(response.message || "Institute not found");
+      }
+
+      return response;
+    } catch (err: any) {
+      errorToast(err?.message || "Error fetching institute");
+
+      return {
+        success: false,
+        error: err?.message || "Error fetching institute",
+        data: null,
+      };
+    }
+  }
+
+  /**
+   * ---------------------------------------------------------
+   * Fetch Institute Courses
+   * ---------------------------------------------------------
+   */
+  public async fetchInstituteCourses<T>(params: {
+    institute_code: string;
+  }): Promise<ApiResponse<T>> {
+    const res = await apiClient.get<ApiResponse<T>>(
+      AppData.routes.backend.api.institute.getCourse,
+      params
+    );
+    console.log("fetchInstituteCourses", params);
+    return res;
+  }
+
+  /**
+   * ---------------------------------------------------------
+   * Validate Institute Code
+   * ---------------------------------------------------------
+   */
+  public validateInstituteCode(code: string): boolean {
+    // Alphanumeric, case-insensitive, between 3 and 20 characters
+    const regex = /^[a-z0-9]{3,20}$/i;
+    return regex.test(code);
+  }
+  //=======================================================================================================
+  /* ------------------------------------------------------------- */
+  /* PUBLIC: FETCH COURSES                                         */
+  /* ------------------------------------------------------------- */
+  public static async fetchCourses<T>(
+    institute_code: string,
+    params?: {
+      page?: number;
+      limit?: number | "all";
+      course_code?: string;
+      course_name?: string;
+      category?: string;
+      type?: string;
+      status?: string;
+    }
+  ): Promise<T> {
+    if (!institute_code) {
+      throw new Error("institute_code is required");
+    }
+
+    const response = await apiClient.get<ApiResponse<T>>(
+      AppData.routes.backend.api.institute.getCourse,
+      {
+        institute_code,
+        ...params,
+      }
+    );
+
+    return response.data;
+  }
+
+  /* ------------------------------------------------------------- */
+  /* PUBLIC: CREATE COURSE                                        */
+  /* ------------------------------------------------------------- */
+  public static async createCourse<T>(payload: {
+    institute_code: string;
+    course_code: string;
+    course_name: string;
+    category: string;
+    type: "university" | "computer" | "skill";
+    duration: { value: number; unit: "year" | "month" };
+    eligibility?: string;
+    fees: { total: number; currency?: string };
+    status?: "active" | "inactive" | "archived";
+    description?: string;
+  }): Promise<T> {
+    if (!payload?.institute_code) {
+      throw new Error("institute_code is required");
+    }
+
+    const response = await apiClient.post<ApiResponse<T>>(
+      AppData.routes.backend.api.institute.createCourse,
+      payload
+    );
+    return response.data;
+  }
+
+  /* ------------------------------------------------------------- */
+  /* PUBLIC: UPDATE COURSE                                        */
+  /* ------------------------------------------------------------- */
+  public static async updateCourse<T>(payload: {
+    institute_code: string;
+    course_id: string;
+    course_name?: string;
+    category?: string;
+    type?: "university" | "computer" | "skill";
+    duration?: { value: number; unit: "year" | "month" };
+    eligibility?: string;
+    fees?: { total: number; currency?: string };
+    status?: "active" | "inactive" | "archived";
+    description?: string;
+  }): Promise<T> {
+    if (!payload?.institute_code || !payload?.course_id) {
+      throw new Error("institute_code and course_id are required");
+    }
+
+    const response = await apiClient.put<ApiResponse<T>>(
+      AppData.routes.backend.api.institute.updateCourse,
+      payload
+    );
+    return response.data;
+  }
+
+  /* ------------------------------------------------------------- */
+  /* PUBLIC: ARCHIVE COURSE (SOFT DELETE)                          */
+  /* ------------------------------------------------------------- */
+  public static async archiveCourse<T>(
+    institute_code: string,
+    course_id: string
+  ): Promise<T> {
+    if (!institute_code || !course_id) {
+      throw new Error("institute_code and course_id are required");
+    }
+
+    const response = await apiClient.delete<ApiResponse<T>>(
+      AppData.routes.backend.api.institute.deleteCourse,
+      {
+        params: { institute_code, course_id },
+      }
+    );
+
+    return response.data;
   }
 }
 

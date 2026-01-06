@@ -22,5 +22,5 @@ export async function saveLoginActivity({
       userAgent,
     },
     status: "success",
-  });
+  }).then(() => console.log("Save Login Activity"));
 }

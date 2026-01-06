@@ -1,0 +1,136 @@
+import { Document, Schema, Types } from "mongoose";
+
+export type StudentDocumentFile = {
+  name: string;
+  url: string;
+  mimeType: string;
+  size: number; // bytes
+};
+
+export type UploadedBy = {
+  name: string;
+  email: string;
+};
+
+export type StudentDocument = {
+  type: string; // Aadhaar Card, Marksheet, TC, Profile Photo
+  file: StudentDocumentFile;
+  uploadedAt: Date;
+  uploadedBy: UploadedBy;
+
+  // optional future-ready fields
+  verified?: {
+    status: boolean;
+    verifiedAt?: Date;
+    verifiedBy?: string;
+  };
+
+  visibility?: "institute" | "user" | "student" | "public";
+};
+
+export interface Student extends Document {
+  _id: Types.ObjectId | string;
+
+  auth: {
+    studentId: string;
+    password: string;
+    role: string;
+    verify: {
+      isVerified: boolean;
+      isLoginEnabled: boolean;
+    };
+    lastLogin: Date | null;
+  };
+
+  institute: {
+    instituteId: Schema.Types.ObjectId;
+    institute_code: string;
+    institute_logo: string;
+    institute_name: string;
+    owner_name?: string;
+    owner_mobile?: string;
+    owner_email?: string;
+  };
+
+  personal: {
+    firstName: string;
+    lastName?: string;
+    fullName: string;
+    gender: "male" | "female" | "other";
+    dob: Date;
+    mobile: string;
+    email?: string;
+    fatherName?: string;
+    motherName?: string;
+    profile_url: string;
+    address?: {
+      fullAddress?: string;
+      line?: string;
+      city?: string;
+      state?: string;
+      pincode?: string;
+      country?: string;
+    };
+  };
+
+  academic: {
+    rollNo: string;
+    timing: string;
+    registrationNo: string;
+
+    admissionDate: Date;
+    course?: {
+      name: string;
+      groupTitle?: string;
+      course_code?: string;
+      baseFee?: number;
+    };
+  };
+
+  permissions: {
+    superAccess: boolean;
+    profile: { show: boolean; edit: boolean };
+    communication: { sendMessage: boolean; inboxMessage: boolean };
+    fees: { view: boolean; pay: boolean };
+    document: { upload: boolean; download: boolean };
+    result: { view: boolean };
+    attendance: { view: boolean };
+    assignments: { view: boolean };
+    timetable: { view: boolean };
+  };
+
+  /** ✅ NEW STRUCTURE */
+  documents: StudentDocument[];
+
+  fees: {
+    totalFees: number;
+    status: "paid" | "pending" | "partial";
+    paidFees: number;
+    remainingFees: number;
+    detail: {
+      date: Date;
+      amount: number;
+      method: string;
+    }[];
+  };
+
+  currentStatus:
+    | "active"
+    | "inactive"
+    | "passed"
+    | "failed"
+    | "suspended"
+    | "dropout";
+
+  statusHistory: {
+    status: string;
+    date: Date;
+    reason?: string;
+    updatedBy: Schema.Types.ObjectId;
+  }[];
+
+  lastUpdatedBy?: Schema.Types.ObjectId;
+
+  createdAt: Date;
+  updatedAt: Date;
+}

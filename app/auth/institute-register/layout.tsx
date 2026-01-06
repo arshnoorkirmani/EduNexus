@@ -7,7 +7,6 @@ import { AppData } from "@/config/appConfig";
 import { MetadataBuilder } from "@/lib/MetadataBuilder";
 
 export const metadata = MetadataBuilder.auth("Institute Register");
-
 export default function AuthLayout({
   children,
 }: {
@@ -18,7 +17,7 @@ export default function AuthLayout({
 
 function LayoutWrapper({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative min-h-screen w-full bg-background">
+    <div className="relative min-h-full w-screen bg-background">
       {/* Background pattern */}
       <div className="absolute inset-0 bg-grid-small text-primary/5 pointer-events-none" />
 
@@ -35,7 +34,7 @@ function LayoutWrapper({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Main content */}
-      <main className="relative z-20 flex items-center justify-center min-h-screen">
+      <main className="relative z-20 flex items-center justify-center min-h-full w-full px-2">
         {children}
       </main>
 

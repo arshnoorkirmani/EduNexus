@@ -5,15 +5,16 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(request: NextRequest) {
   try {
     const url = new URL(request.url);
-    const email = url.searchParams.get("email");
+    const rawEmail = url.searchParams.get("email");
 
     // ---------------- VALIDATION ----------------
+    const email = rawEmail?.trim().toLowerCase();
     if (!email) {
       return NextResponse.json(
         {
           success: false,
           message: "Email is required.",
-          data: { isRegistered: false },
+          data: { isRegistered: false }
         },
         { status: 400 }
       );
@@ -26,14 +27,14 @@ export async function GET(request: NextRequest) {
     const institute = await InstituteModel.findOne({ email })
       .select("_id email institute_name isVerified information.institute_name")
       .lean();
-    console.log(institute);
+
     // ---------------- RESPONSE: FOUND ----------------
     if (institute) {
       return NextResponse.json(
         {
           success: true,
           message: "Email already registered.",
-          data: { isRegistered: true, institute },
+          data: { isRegistered: true, institute }
         },
         { status: 200 }
       );
@@ -44,17 +45,18 @@ export async function GET(request: NextRequest) {
       {
         success: true,
         message: "Email not registered.",
-        data: { isRegistered: false },
+        data: { isRegistered: false }
       },
       { status: 200 }
     );
+
   } catch (error: any) {
     console.error("GET /institute/check → Error:", error);
 
     return NextResponse.json(
       {
         success: false,
-        error: error.message,
+        message: "Internal server error."
       },
       { status: 500 }
     );

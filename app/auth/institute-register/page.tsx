@@ -75,149 +75,144 @@ export default function page() {
   }
 
   return (
-    <div className="container flex items-center justify-center min-h-screen p-4">
-      <div className="w-[420px]">
-        <Card>
-          <CardHeader className="text-center space-y-0.5">
-            <CardTitle className="text-xl font-semibold">
-              Create Institute Account
-              <CardDescription className="font-normal tracking-normal">
-                Get started by setting up your institute profile
-              </CardDescription>
-            </CardTitle>
-          </CardHeader>
+    <div className="container flex items-center justify-center min-h-screen md:p-4">
+      <Card className="w-[360px] sm:w-[400px] gap-3">
+        <CardHeader className="text-center space-y-0.5">
+          <CardTitle className="text-xl font-semibold">
+            Create Institute Account
+            <CardDescription className="font-normal tracking-normal text-xs">
+              Get started by setting up your institute profile
+            </CardDescription>
+          </CardTitle>
+        </CardHeader>
 
-          <CardContent>
-            <FormProvider {...form}>
-              <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-3"
+        <CardContent className="px-4 md:px-auto">
+          <FormProvider {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+              {/* Owner Name */}
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Owner Name</FormLabel>
+                    <FormControl>
+                      <IconInput
+                        {...field}
+                        placeholder="Enter Owner Name"
+                        className="pl-12"
+                        icon={<User2Icon />}
+                      />
+                    </FormControl>{" "}
+                    <CustomFormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Email */}
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field, fieldState }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <EmailInput
+                        {...field}
+                        mode="register"
+                        watch={form.watch}
+                        trigger={form.trigger}
+                        setError={form.setError}
+                        clearErrors={form.clearErrors}
+                        setAvailableName={setInstituteName}
+                        setEmailAvailable={setIsEmailAvailable}
+                        error={!!fieldState.error}
+                      />
+                    </FormControl>
+                    <CustomFormMessage />
+                    {/* Warning */}
+                    {instituteName && (
+                      <CustomFormMessage
+                        info="Institute Name detected:"
+                        tooltip="This email is linked with another institute. Proceeding will update the owner name, institute name, and password."
+                      >
+                        <b>{instituteName}</b>
+                      </CustomFormMessage>
+                    )}
+                  </FormItem>
+                )}
+              />
+
+              {/* Institute Name */}
+              <FormField
+                control={form.control}
+                name="institute_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Institute Name</FormLabel>
+                    <FormControl>
+                      <IconInput
+                        {...field}
+                        placeholder="Enter Owner Name"
+                        className="pl-12"
+                        icon={<User2Icon />}
+                      />
+                    </FormControl>{" "}
+                    <CustomFormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Password */}
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field, fieldState }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <PasswordInput
+                        {...field}
+                        error={!!fieldState.error}
+                        placeholder="••••••••••"
+                        showRequirements
+                      />
+                    </FormControl>{" "}
+                    <CustomFormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Submit Button */}
+              <Button
+                type="submit"
+                variant="default"
+                className="w-full p-3"
+                disabled={!isEmailAvailable || isSubmiting}
               >
-                {/* Owner Name */}
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Owner Name</FormLabel>
-                      <FormControl>
-                        <IconInput
-                          {...field}
-                          placeholder="Enter Owner Name"
-                          className="pl-12"
-                          icon={<User2Icon />}
-                        />
-                      </FormControl>{" "}
-                      <CustomFormMessage />
-                    </FormItem>
-                  )}
-                />
+                {isSubmiting ? (
+                  <span className="inline-flex items-center gap-2">
+                    <LucideLoader className="animate-spin" size={16} />
+                    Registering...
+                  </span>
+                ) : (
+                  "Register Institute"
+                )}
+              </Button>
 
-                {/* Email */}
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field, fieldState }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <EmailInput
-                          {...field}
-                          mode="register"
-                          watch={form.watch}
-                          trigger={form.trigger}
-                          setError={form.setError}
-                          clearErrors={form.clearErrors}
-                          setAvailableName={setInstituteName}
-                          setEmailAvailable={setIsEmailAvailable}
-                          error={!!fieldState.error}
-                        />
-                      </FormControl>
-                      <CustomFormMessage />
-                      {/* Warning */}
-                      {instituteName && (
-                        <CustomFormMessage
-                          info="Institute Name detected:"
-                          tooltip="This email is linked with another institute. Proceeding will update the owner name, institute name, and password."
-                        >
-                          <b>{instituteName}</b>
-                        </CustomFormMessage>
-                      )}
-                    </FormItem>
-                  )}
-                />
-
-                {/* Institute Name */}
-                <FormField
-                  control={form.control}
-                  name="institute_name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Institute Name</FormLabel>
-                      <FormControl>
-                        <IconInput
-                          {...field}
-                          placeholder="Enter Owner Name"
-                          className="pl-12"
-                          icon={<User2Icon />}
-                        />
-                      </FormControl>{" "}
-                      <CustomFormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Password */}
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field, fieldState }) => (
-                    <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <PasswordInput
-                          {...field}
-                          error={!!fieldState.error}
-                          placeholder="••••••••••"
-                          showRequirements
-                        />
-                      </FormControl>{" "}
-                      <CustomFormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Submit Button */}
+              <Link href="/auth/institute-login">
                 <Button
-                  type="submit"
-                  variant="default"
-                  className="w-full p-3"
-                  disabled={!isEmailAvailable || isSubmiting}
+                  variant="secondary"
+                  type="button"
+                  className="w-full cursor-pointer"
                 >
-                  {isSubmiting ? (
-                    <span className="inline-flex items-center gap-2">
-                      <LucideLoader className="animate-spin" size={16} />
-                      Registering...
-                    </span>
-                  ) : (
-                    "Register Institute"
-                  )}
+                  Institute Login
                 </Button>
-
-                <Link href="/auth/institute-login">
-                  <Button
-                    variant="secondary"
-                    type="button"
-                    className="w-full cursor-pointer"
-                  >
-                    Institute Login
-                  </Button>
-                </Link>
-              </form>
-            </FormProvider>
-          </CardContent>
-        </Card>
-      </div>
+              </Link>
+            </form>
+          </FormProvider>
+        </CardContent>
+      </Card>
       {/* ========================= */}
       <OTPDialog
         open={otpOpen}

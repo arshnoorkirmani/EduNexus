@@ -1,64 +1,216 @@
-import { Schema, model, models } from "mongoose";
+import { Student } from "@/types/models/student.model";
+import { model, models, Schema } from "mongoose";
+import { StudentDocumentSchema } from "./StudentDocument";
+import { hash } from "bcryptjs";
 
-const StudentSchema = new Schema(
+const StudentSchema = new Schema<Student>(
   {
-    institute_id: {
-      type: Schema.Types.ObjectId,
-      ref: "Institute",
-      required: true,
+    /* ================= AUTH ================= */
+    auth: {
+      studentId: { type: String, required: true, trim: true },
+      password: { type: String, required: true, select: false },
+      role: { type: String, default: "student", immutable: true },
+      verify: {
+        isVerified: { type: Boolean, default: false },
+        isLoginEnabled: { type: Boolean, default: true },
+      },
+      lastLogin: { type: Date, default: null },
     },
 
+    /* ================= INSTITUTE ================= */
+    institute: {
+      instituteId: {
+        type: Schema.Types.ObjectId,
+        ref: "Institute",
+        required: true,
+      },
+      instituteCode: { type: String, required: true },
+      instituteLogo: { type: String, default: null },
+      instituteName: { type: String, required: true },
+    },
+
+    /* ================= PERSONAL ================= */
     personal: {
-      first_name: { type: String, required: true },
-      last_name: { type: String, default: "" },
+      firstName: { type: String, required: true, trim: true },
+      lastName: { type: String, trim: true },
+      fullName: { type: String, required: true },
       gender: {
         type: String,
         enum: ["male", "female", "other"],
-        default: "male",
+        required: true,
       },
       dob: { type: Date, required: true },
       mobile: { type: String, required: true },
-      email: { type: String, default: null },
-      address: { type: String, default: null },
-      city: { type: String, default: null },
-      state: { type: String, default: null },
-      pincode: { type: String, default: null },
-    },
-
-    academic: {
-      roll_no: { type: String, required: true },
-      class_name: { type: String, required: true },
-      section: { type: String, default: null },
-      admission_date: { type: Date, required: true },
-      previous_school: { type: String, default: null },
-      course: {
-        group_title: String,
-        course_title: String,
-        base_fee: Number,
+      email: { type: String, lowercase: true, trim: true },
+      fatherName: String,
+      motherName: String,
+      address: {
+        fullAddress: String,
+        line: String,
+        city: String,
+        state: String,
+        pincode: String,
+        country: String,
       },
     },
 
-    documents: {
-      profile_photo: { type: String, default: null },
-      aadhaar: { type: String, default: null },
-      birth_certificate: { type: String, default: null },
+    /* ================= ACADEMIC ================= */
+    academic: {
+      registrationNo: { type: String, required: true },
+      rollNo: { type: String, required: true },
+      timing: { type: String, required: true, trim: true, default: "00:00" },
+      admissionDate: { type: Date, required: true },
+      course: {
+        name: String,
+        groupTitle: String,
+        course_code: String,
+        duration: {
+          unit: String,
+          value: Number,
+        },
+        baseFee: Number,
+      },
     },
 
-    status: {
+    /* ================= DOCUMENTS ================= */
+    documents: {
+      type: [StudentDocumentSchema],
+      default: [],
+    },
+
+    /* ================= FEES ================= */
+    fees: {
+      totalFees: { type: Number, required: true },
+      paidFees: { type: Number, default: 0 },
+      remainingFees: { type: Number, default: 0 },
+      status: {
+        type: String,
+        enum: ["paid", "pending", "partial"],
+        default: "pending",
+      },
+      detail: [
+        {
+          date: { type: Date, required: true },
+          amount: { type: Number, required: true },
+          method: { type: String, required: true },
+        },
+      ],
+    },
+    /* ================= PERMISSIONS ================= */
+    permissions: {
+      superAccess: { type: Boolean, default: false },
+
+      profile: {
+        show: { type: Boolean, default: true },
+        edit: { type: Boolean, default: false },
+      },
+
+      communication: {
+        sendMessage: { type: Boolean, default: false },
+        inboxMessage: { type: Boolean, default: false },
+      },
+
+      fees: {
+        view: { type: Boolean, default: true },
+        pay: { type: Boolean, default: false },
+      },
+
+      document: {
+        upload: { type: Boolean, default: true },
+        download: { type: Boolean, default: true },
+      },
+
+      result: { view: { type: Boolean, default: true } },
+      attendance: { view: { type: Boolean, default: true } },
+      assignments: { view: { type: Boolean, default: true } },
+      timetable: { view: { type: Boolean, default: true } },
+    },
+
+    /* ================= STATUS ================= */
+    currentStatus: {
       type: String,
-      enum: ["active", "inactive", "left", "terminated"],
+      enum: ["active", "inactive", "passed", "failed", "suspended", "dropout"],
       default: "active",
     },
 
-    lastUpdatedBy: { type: Schema.Types.ObjectId, ref: "Teacher" },
+    statusHistory: [
+      {
+        status: {
+          type: String,
+          enum: [
+            "active",
+            "inactive",
+            "passed",
+            "failed",
+            "suspended",
+            "dropout",
+          ],
+          required: true,
+        },
+        date: { type: Date, default: Date.now },
+        reason: String,
+        updatedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+      },
+    ],
+
+    lastUpdatedBy: { type: Schema.Types.ObjectId, ref: "User" },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    versionKey: false,
+  }
 );
 
-StudentSchema.index({ institute_id: 1 });
+StudentSchema.pre("save", async function (next) {
+  if (this.isModified("auth.password")) {
+    this.auth.password = await hash(this.auth.password, 12);
+  }
+  next();
+});
+
 StudentSchema.index(
-  { "academic.roll_no": 1, institute_id: 1 },
+  { "auth.studentId": 1, "institute.instituteId": 1 },
   { unique: true }
 );
 
-export const StudentModel = models.Student ?? model("Student", StudentSchema);
+StudentSchema.index(
+  { "academic.rollNo": 1, "institute.instituteId": 1 },
+  { unique: true }
+);
+
+StudentSchema.index({ "institute.instituteId": 1 });
+StudentSchema.index({ currentStatus: 1 });
+StudentSchema.index({ "fees.status": 1 });
+StudentSchema.index({ "academic.admissionDate": -1 });
+
+StudentSchema.index(
+  {
+    "personal.firstName": "text",
+    "personal.lastName": "text",
+    "academic.rollNo": "text",
+    "auth.studentId": "text",
+  },
+  { name: "StudentSearchIndex" }
+);
+StudentSchema.pre("save", function (next) {
+  if (this.fees) {
+    this.fees.remainingFees = this.fees.totalFees - this.fees.paidFees;
+  }
+  next();
+});
+
+StudentSchema.pre("findOneAndUpdate", function (next) {
+  const update = this.getUpdate() as any;
+
+  if (update?.fees) {
+    update.fees.remainingFees =
+      (update.fees.totalFees ?? 0) - (update.fees.paidFees ?? 0);
+  }
+  next();
+});
+if (process.env.NODE_ENV === "development" && models.Student) {
+  delete models.Student;
+}
+
+export const StudentModel =
+  models.Student || model<Student>("Student", StudentSchema);

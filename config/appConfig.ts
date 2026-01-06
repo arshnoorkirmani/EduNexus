@@ -15,6 +15,7 @@ export const AppData = {
 
       image: process.env.NEXT_PUBLIC_META_OG_IMAGE || "/og-image.png",
     },
+    themeColor: "",
   },
 
   meta: {
@@ -112,6 +113,60 @@ export const AppData = {
         teacher: "/teacher/settings",
         student: "/student/settings",
       },
+    },
+    backend: {
+      api: {
+        sendEmail: "/api/send-email",
+        media: "/api/media",
+        imageKitAuth: "/api/imagekit-auth",
+        student: {
+          base: "/api/student",
+          checkId: "/api/student/check-student-id",
+          generateId: "/api/student/generate-id",
+        },
+        teacher: {
+          base: "/api/teacher",
+        },
+        otp: {
+          verify: "/api/otp/verify",
+        },
+        institute: {
+          register: "/api/institute",
+          login: "/api/institute/login",
+          verifyCode: "/api/institute/verify-code",
+          checkEmail: "/api/institute/check-email",
+          sendCode: "/api/institute/send-code",
+          getInstitute: "/api/institute",
+          createCourse: "/api/institute/course",
+          updateCourse: "/api/institute/course",
+          deleteCourse: "/api/institute/course",
+          getCourse: "/api/institute/course",
+          getSequence: "/api/institute/get-seq",
+          createStudent: "/api/student",
+        },
+      },
+    },
+  },
+  default: {
+    institute: {
+      logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR9_pDLvqwqAtarClfozs84DMoz-KreGeP1cw&s",
+      profile_url:
+        "https://fra.cloud.appwrite.io/v1/storage/buckets/67d2bdba0038ff3295fa/files/68f7822e00337f611ca1/view?project=67d2bc76002d39d36196",
+    },
+    student: {
+      logo: "https://cdn-icons-png.flaticon.com/512/3177/3177440.png",
+      profile_url:
+        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQTfr-VGQmG3nOKJGZ9rviTPOJ4RZb1L3qUGQ&s",
+    },
+    teacher: {
+      logo: "https://cdn-icons-png.flaticon.com/512/3177/3177440.png",
+      profile_url:
+        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQTfr-VGQmG3nOKJGZ9rviTPOJ4RZb1L3qUGQ&s",
+    },
+    user: {
+      logo: "https://cdn-icons-png.flaticon.com/512/3177/3177440.png",
+      profile_url:
+        "https://fra.cloud.appwrite.io/v1/storage/buckets/67d2bdba0038ff3295fa/files/68f7822e00337f611ca1/view?project=67d2bc76002d39d36196",
     },
   },
 } as const;

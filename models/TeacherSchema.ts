@@ -1,44 +1,75 @@
-import { Schema, model, models } from "mongoose";
+import { Teacher } from "@/types/models/teacher.model";
+import mongoose, { Schema, Document } from "mongoose";
 
-const TeacherSchema = new Schema(
+const TeacherSchema = new Schema<Teacher>(
   {
-    institute_id: {
-      type: Schema.Types.ObjectId,
-      ref: "Institute",
-      required: true,
+    auth: {
+      teacherId: { type: String, required: true },
+      password: { type: String, required: true },
+      userType: { type: String, default: "teacher" },
+      verify: {
+        isVerify: { type: Boolean, default: false },
+        isActive: { type: Boolean, default: true },
+      },
+      lastLogin: { type: Date, default: null },
+    },
+
+    institute: {
+      instituteId: {
+        type: Schema.Types.ObjectId,
+        ref: "Institute",
+        required: true,
+      },
     },
 
     personal: {
-      first_name: { type: String, required: true },
-      last_name: { type: String, default: "" },
+      name: { type: String, required: true },
+      email: { type: String, default: null },
+      mobile: { type: String, default: null },
       gender: {
         type: String,
         enum: ["male", "female", "other"],
         default: "male",
       },
-      dob: { type: Date, required: true },
-      mobile: { type: String, required: true },
-      email: { type: String, required: true, lowercase: true },
-      address: { type: String, default: null },
+      dob: { type: Date, default: null },
+
+      address: {
+        line: { type: String, default: null },
+        city: { type: String, default: null },
+        state: { type: String, default: null },
+        pincode: { type: String, default: null },
+        country: { type: String, default: null },
+      },
     },
 
     professional: {
-      designation: { type: String, required: true },
-      joining_date: { type: Date, required: true },
-      department: { type: String, default: null },
-      qualifications: { type: [String], default: [] },
+      qualification: { type: String, default: null },
+      experience: { type: Number, default: 0 },
+      subjects: [{ type: String }],
     },
-
-    salary: {
-      base_salary: { type: Number, default: 0 },
-      allowances: { type: Number, default: 0 },
-      deductions: { type: Number, default: 0 },
+    documents: {
+      profilePhoto: { type: String, default: null },
+      aadhaar: { type: String, default: null },
+      birthCertificate: { type: String, default: null },
     },
+    permissions: {
+      all: { type: Boolean, default: false },
 
-    access_role: {
-      type: Schema.Types.ObjectId,
-      ref: "Role",
-      required: true,
+      sendMessage: { type: Boolean, default: true },
+      inboxMessage: { type: Boolean, default: true },
+
+      attendanceManage: { type: Boolean, default: false },
+      assignmentsManage: { type: Boolean, default: false },
+      resultManage: { type: Boolean, default: false },
+
+      timetableView: { type: Boolean, default: true },
+      studentView: { type: Boolean, default: true },
+      studentProfileView: { type: Boolean, default: true },
+
+      studyMaterialUpload: { type: Boolean, default: false },
+      studyMaterialDelete: { type: Boolean, default: false },
+
+      profileEdit: { type: Boolean, default: true },
     },
 
     status: {
@@ -46,10 +77,16 @@ const TeacherSchema = new Schema(
       enum: ["active", "inactive", "terminated"],
       default: "active",
     },
+
+    lastUpdatedBy: { type: Schema.Types.ObjectId, ref: "Admin" },
   },
+
   { timestamps: true }
 );
 
-TeacherSchema.index({ email: 1, institute_id: 1 }, { unique: true });
+// Index for performance
+TeacherSchema.index({ "auth.teacherId": 1 });
+TeacherSchema.index({ "institute.instituteId": 1 });
 
-export const TeacherModel = models.Teacher ?? model("Teacher", TeacherSchema);
+export const TeacherModel =
+  mongoose.models.Teacher || mongoose.model<Teacher>("Teacher", TeacherSchema);
