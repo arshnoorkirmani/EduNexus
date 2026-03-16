@@ -154,8 +154,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        message: "Internal server error",
-        error: error.message,
+        message: error.message || "Internal server error.",
+        error:
+          process.env.NODE_ENV === "development" ? error.toString() : undefined,
       },
       { status: 500 }
     );
@@ -291,7 +292,12 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error("GET /institute error:", error);
     return NextResponse.json(
-      { success: false, message: "Internal server error" },
+      {
+        success: false,
+        message: error.message || "Internal server error.",
+        error:
+          process.env.NODE_ENV === "development" ? error.toString() : undefined,
+      },
       { status: 500 }
     );
   }
@@ -340,8 +346,9 @@ export async function PUT(request: Request) {
     return NextResponse.json(
       {
         success: false,
-        message: "Internal server error",
-        error: error.message,
+        message: error.message || "Internal server error.",
+        error:
+          process.env.NODE_ENV === "development" ? error.toString() : undefined,
       },
       { status: 500 }
     );
