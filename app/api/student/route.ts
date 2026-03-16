@@ -103,7 +103,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error.message || "Internal Server Error",
+        message: error.message || "Internal Server Error",
+        error:
+          process.env.NODE_ENV === "development" ? error.toString() : undefined,
       },
       { status: 500 }
     );

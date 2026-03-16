@@ -12,11 +12,13 @@ const globalWithMongoose = globalThis as typeof globalThis & {
 export default async function dbConnect(
   databaseName?: string
 ): Promise<ConnectionObject> {
-  const MONGO_BASE = process.env.MONGODB_URL;
+  const isLocal = process.env.NODE_ENV !== "production";
+  const MONGO_BASE = isLocal ? process.env.MONGODB_URL_Local : process.env.MONGODB_URL;
   const DEFAULT_DB = process.env.DATABASE_NAME;
-
+  console.log("MONGO_BASE", MONGO_BASE);
+  console.log("DEFAULT_DB", DEFAULT_DB);
   if (!MONGO_BASE) {
-    throw new Error("❌ MONGODB_URL missing in .env");
+    throw new Error(`❌ ${isLocal ? "MONGODB_URL_Local" : "MONGODB_URL"} missing in .env`);
   }
 
   const targetDb = databaseName || DEFAULT_DB;
@@ -24,7 +26,7 @@ export default async function dbConnect(
   if (!targetDb) {
     throw new Error("❌ DATABASE_NAME missing and no databaseName provided");
   }
-
+  console.log("targetDb", targetDb);
   // 1. If a connection is already established and matches the target DB, reuse it immediately.
   if (
     mongoose.connection.readyState === 1 &&
@@ -68,20 +70,37 @@ export default async function dbConnect(
   }
 
   // Construct the correct connection URI for the target database
-  // We use the URL object to safely replace the database name (pathname)
-  const urlObj = new URL(MONGO_BASE);
-  urlObj.pathname = `/${targetDb}`;
+  let connectionUri: string;
 
-  // Add parameters using searchParams to avoid duplication
-  if (!urlObj.searchParams.has("retryWrites")) {
-    urlObj.searchParams.set("retryWrites", "true");
+  if (process.env.NODE_ENV !== "production") {
+    // In local environment, the URL has multiple hosts which URL object might not parse correctly.
+    // Insert the database name just before the query parameters.
+    if (MONGO_BASE.includes("/?")) {
+      connectionUri = MONGO_BASE.replace("/?", `/${targetDb}?`);
+    } else if (MONGO_BASE.endsWith("/")) {
+      connectionUri = `${MONGO_BASE}${targetDb}`;
+    } else {
+      connectionUri = `${MONGO_BASE}/${targetDb}`;
+    }
+  } else {
+    // We use the URL object to safely replace the database name (pathname) in production
+    const urlObj = new URL(MONGO_BASE);
+    urlObj.pathname = `/${targetDb}`;
+
+    // Add parameters using searchParams to avoid duplication
+    if (!urlObj.searchParams.has("retryWrites")) {
+      urlObj.searchParams.set("retryWrites", "true");
+    }
+    if (!urlObj.searchParams.has("w")) {
+      urlObj.searchParams.set("w", "majority");
+    }
+    if (!urlObj.searchParams.has("family")) {
+      urlObj.searchParams.set("family", "4");
+    }
+
+    connectionUri = urlObj.toString();
   }
-  if (!urlObj.searchParams.has("w")) {
-    urlObj.searchParams.set("w", "majority");
-  }
-
-  const connectionUri = urlObj.toString();
-
+  console.log("connectionUri", connectionUri);
   try {
     // Store the promise globally so parallel requests wait
     globalWithMongoose.mongoosePromise = mongoose.connect(connectionUri, {

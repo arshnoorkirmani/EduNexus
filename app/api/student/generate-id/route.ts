@@ -97,6 +97,8 @@ export async function GET(request: NextRequest) {
       {
         success: false,
         message: error.message || "Internal Server Error",
+        error:
+          process.env.NODE_ENV === "development" ? error.toString() : undefined,
         data: null,
       },
       { status: 500 }
