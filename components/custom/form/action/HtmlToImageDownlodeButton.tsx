@@ -76,7 +76,6 @@ export function HtmlToImageDownloader({
         cacheBust: false, // process locally to avoid reload flickers
         pixelRatio,
         skipAutoScale: true,
-        backgroundColor: "transparent", // Avoid white matte if not needed
         style: {
           margin: "0", // Force reset margin during capture
           transform: "none", // Remove any scaling transforms

@@ -1,6 +1,8 @@
 import React, { forwardRef } from "react";
 import { cn } from "@/lib/utils";
 import { User2 } from "lucide-react";
+import { IKImage } from "../imagekit/IKImage";
+import { StudentAvatar } from "../imagekit/StudentAvatar";
 
 export interface InstituteDetails {
   name: string;
@@ -221,35 +223,7 @@ interface StudentIdCardProps extends React.HTMLAttributes<HTMLDivElement> {
   data: StudentIdData;
 }
 
-// Helper for consistent image handling
-const StudentPhoto = ({
-  url,
-  uniqueId,
-}: {
-  url?: string;
-  uniqueId?: string;
-}) => {
-  const finalUrl = url
-    ? uniqueId
-      ? `${url}?uid=${uniqueId}`
-      : url
-    : undefined;
-  if (finalUrl) {
-    return (
-      <img
-        src={finalUrl}
-        alt="Student"
-        className="w-full h-full object-cover"
-        crossOrigin="anonymous"
-      />
-    );
-  }
-  return (
-    <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-300">
-      <User2 className="w-12 h-12" />
-    </div>
-  );
-};
+// StudentAvatar handles student profile images across templates
 
 // Helper for Institute Logo
 const InstituteLogo = ({
@@ -266,20 +240,20 @@ const InstituteLogo = ({
       ? `${url}?uid=${uniqueId}`
       : url
     : undefined;
-  if (finalUrl) {
-    return (
-      <img
-        src={finalUrl}
-        alt={alt}
-        className="w-full h-full object-contain"
-        crossOrigin="anonymous"
-      />
-    );
-  }
+
   return (
-    <div className="w-full h-full flex items-center justify-center bg-slate-200 text-slate-400 font-bold text-xs">
-      {alt.charAt(0)}
-    </div>
+    <IKImage
+      src={finalUrl}
+      alt={alt}
+      className="object-contain"
+      fallbackIcon={<div className="font-bold text-xs">{alt.charAt(0)}</div>}
+      transformation={{
+        width: 400,
+        height: 400,
+        quality: 100,
+        format: "png",
+      }}
+    />
   );
 };
 
@@ -372,9 +346,17 @@ export const StudentIdClassic = forwardRef<
       <main className="relative px-4 pt-2.5 pb-2 flex gap-3 h-[calc(100%-70px)] bg-white">
         {/* Left Column: Photo & ID */}
         <div className="flex flex-col w-[85px] shrink-0">
-          <div className="w-[85px] h-[102px] bg-slate-200 border border-slate-300 shadow-sm relative overflow-hidden mb-1.5 rounded-[2px]">
-            <StudentPhoto url={data.photoUrl} uniqueId={uniqueId} />
-          </div>
+          <StudentAvatar
+            src={data.photoUrl}
+            uniqueId={uniqueId}
+            shape="portrait"
+            width={85}
+            height={102}
+            className="mb-1.5 rounded-[2px] border-slate-300 shadow-sm bg-slate-200"
+            innerClassName="rounded-[2px]"
+            withHoverZoom={false}
+            withGlow={false}
+          />
           <div className="bg-slate-50 border border-slate-200 p-0.5 rounded-sm text-center">
             <span className="block text-[5px] uppercase font-bold text-slate-500 mb-px">
               Student ID
@@ -529,13 +511,18 @@ export const StudentIdModern = forwardRef<
         {/* Body */}
         <div className="flex gap-2 gap-y-1 flex-1 min-h-0">
           {/* Photo */}
-          <div className="flex flex-col gap-1.5 shrink-0">
-            <div className="w-[84px] h-[100px] rounded-lg p-[2px] bg-gradient-to-br from-white/30 to-white/5 shadow-lg print:border print:border-slate-700">
-              <div className="w-full h-full rounded-[6px] overflow-hidden bg-slate-800 print:bg-slate-800">
-                <StudentPhoto url={data.photoUrl} uniqueId={uniqueId} />
-              </div>
-            </div>
-            <div className="text-center w-[84px]">
+          <div className="flex flex-col gap-1.5 shrink-0 items-center">
+            <StudentAvatar
+              src={data.photoUrl}
+              uniqueId={uniqueId}
+              shape="square"
+              size={90}
+              withHoverZoom={false}
+              withGlow={true}
+              className="p-[2.5px] rounded-[16px] bg-gradient-to-br from-white/30 to-white/5 border border-white/20 shadow-[0_8px_30px_rgb(0,0,0,0.4)] shadow-indigo-500/20 print:border-slate-700 print:shadow-none"
+              innerClassName="rounded-[14px] bg-slate-800"
+            />
+            <div className="text-center w-[90px] mt-0.5">
               <p className="text-[6px] text-white/40 uppercase font-bold tracking-widest">
                 Student ID
               </p>
@@ -648,9 +635,16 @@ export const StudentIdMinimal = forwardRef<
       <div className="flex flex-1 p-5 gap-5 min-h-0 bg-white">
         {/* Left: Photo & ID */}
         <div className="flex flex-col gap-2.5 w-[90px] shrink-0">
-          <div className="w-full h-[110px] bg-slate-50 relative overflow-hidden rounded-sm grayscale-[0.1] border border-slate-100">
-            <StudentPhoto url={data.photoUrl} uniqueId={uniqueId} />
-          </div>
+          <StudentAvatar
+            src={data.photoUrl}
+            uniqueId={uniqueId}
+            shape="square"
+            size={90}
+            className="bg-slate-50 relative overflow-hidden rounded-xl grayscale-[0.1] border border-slate-200 shadow-sm"
+            innerClassName="rounded-xl"
+            withHoverZoom={true}
+            withGlow={false}
+          />
           <div className="text-center border-1">
             <p className="text-[6px] uppercase font-bold text-slate-400 tracking-wider">
               Student ID

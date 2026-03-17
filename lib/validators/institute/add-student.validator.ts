@@ -96,9 +96,11 @@ export const studentFormSchema = z
 
       gender: GenderEnum,
 
-      dob: z.coerce.date({
+      dob: z.preprocess((arg) => {
+        if (typeof arg === "string" || arg instanceof Date) return new Date(arg);
+      }, z.date({
         message: "Date of birth must be a valid date",
-      }),
+      })),
 
       mobile: phoneNumber,
 
@@ -135,9 +137,11 @@ export const studentFormSchema = z
 
       timing: timeHHMM.optional(),
 
-      admissionDate: z.coerce.date({
+      admissionDate: z.preprocess((arg) => {
+        if (typeof arg === "string" || arg instanceof Date) return new Date(arg);
+      }, z.date({
         message: "Admission date must be a valid date",
-      }),
+      })),
 
       course: z
         .object({

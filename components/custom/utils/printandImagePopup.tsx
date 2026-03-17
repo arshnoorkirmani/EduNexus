@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Download, Printer } from "lucide-react";
 
-export default function PrintAndImagePopup() {
+export default function PrintAndImagePopup({ student }: { student?: any }) {
   const cardRef = useRef<HTMLDivElement>(null);
 
   const handleDownload = async () => {
@@ -78,7 +78,7 @@ export default function PrintAndImagePopup() {
 
         {/* ID Card Preview */}
         <div className="flex justify-center py-4">
-          <StudentId ref={cardRef} />
+          <StudentId ref={cardRef} student={student} />
         </div>
 
         <DialogFooter className="gap-3">
@@ -97,7 +97,11 @@ export default function PrintAndImagePopup() {
   );
 }
 
-export const StudentId = forwardRef<HTMLDivElement>((_, ref) => {
+interface StudentIdProps {
+  student?: any;
+}
+
+export const StudentId = forwardRef<HTMLDivElement, StudentIdProps>(({ student }, ref) => {
   return (
     <div ref={ref}>
       <div className="relative group perspective-1000">
@@ -155,18 +159,19 @@ export const StudentId = forwardRef<HTMLDivElement>((_, ref) => {
             <div className="flex-1 space-y-1.5 pt-1">
               <div>
                 <h2 className="text-2xl font-bold text-slate-800 leading-tight tracking-wide">
-                  Arshnoor Kirmani
+                  {student?.personal?.fullName || "Student Name"}
                 </h2>
                 <div className="flex flex-col gap-0.5">
                   <p className="text-xs font-bold text-slate-600 uppercase tracking-wide">
-                    B.Tech - Computer Science
+                    {student?.academic?.course?.name || "Course Name"}
                   </p>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">
                       Validity:
                     </span>
                     <span className="text-[9px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
-                      2025 - 2029
+                      {new Date(student?.academic?.admissionDate || Date.now()).getFullYear()} - 
+                      {new Date(student?.academic?.admissionDate || Date.now()).getFullYear() + (student?.academic?.course?.duration?.value || 3)}
                     </span>
                   </div>
                 </div>
@@ -178,7 +183,7 @@ export const StudentId = forwardRef<HTMLDivElement>((_, ref) => {
                     Student ID
                   </p>
                   <p className="text-base font-bold text-slate-800 font-mono tracking-wide">
-                    ENX-882190
+                    {student?.auth?.studentId || "ID-XXXXXX"}
                   </p>
                 </div>
                 <div>
@@ -186,21 +191,23 @@ export const StudentId = forwardRef<HTMLDivElement>((_, ref) => {
                     Date of Birth
                   </p>
                   <p className="text-xs font-bold text-slate-700">
-                    12 Aug 2003
+                    {student?.personal?.dob 
+                      ? new Date(student.personal.dob).toLocaleDateString("en-GB", { day: '2-digit', month: 'short', year: 'numeric' }) 
+                      : "--/--/----"}
                   </p>
                 </div>
                 <div>
                   <p className="text-[9px] text-slate-500 uppercase font-bold tracking-wider">
                     Blood Group
                   </p>
-                  <p className="text-xs font-bold text-slate-700">O+</p>
+                  <p className="text-xs font-bold text-slate-700">{"O+"}</p>
                 </div>
                 <div className="col-span-2 pb-1">
                   <p className="text-[9px] text-slate-500 uppercase font-bold tracking-wider">
                     Contact
                   </p>
                   <p className="text-xs font-bold text-slate-700">
-                    +91 98765 43210
+                    {student?.personal?.mobile || "+91 XXXXX XXXXX"}
                   </p>
                 </div>
               </div>

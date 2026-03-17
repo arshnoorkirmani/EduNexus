@@ -55,8 +55,11 @@ function parse24h(value?: string) {
 
 function format24h(hour: string, minute: string, meridiem: Meridiem) {
   let h = Number(hour);
-  if (meridiem === "AM") h = h === 12 ? 0 : h;
-  else h = h === 12 ? 12 : h + 12;
+  if (meridiem === "AM") {
+    h = h === 12 ? 0 : h;
+  } else {
+    h = h === 12 ? 12 : h + 12;
+  }
 
   return `${String(h).padStart(2, "0")}:${minute}`;
 }

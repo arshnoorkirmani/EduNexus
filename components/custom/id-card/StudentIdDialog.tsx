@@ -34,6 +34,8 @@ interface StudentIdDialogProps {
   onOpenChange?: (open: boolean) => void;
   trigger?: React.ReactNode;
   defaultDesign?: StudentIdDesign;
+  onEdit?: () => void;
+  preventOutsideClick?: boolean;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -96,7 +98,8 @@ function StudentIdContent({
   design,
   setDesign,
   onClose,
-}: StudentIdContentProps) {
+  onEdit,
+}: StudentIdContentProps & { onEdit?: () => void }) {
   return (
     <div className="flex flex-col h-full w-full bg-muted/30 overflow-hidden">
       {/* 1. Sticky Top Action Bar */}
@@ -191,6 +194,29 @@ function StudentIdContent({
 
           <div className="h-4 w-px bg-border ml-2" />
 
+          {onEdit && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onEdit}
+                className="text-muted-foreground hover:text-foreground h-9 px-3 rounded-lg font-medium text-xs hidden sm:inline-flex"
+              >
+                <EditIcon className="w-4 h-4 mr-2" />
+                Edit
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onEdit}
+                className="text-muted-foreground hover:text-foreground h-9 w-9 rounded-lg sm:hidden"
+              >
+                <EditIcon className="w-4 h-4" />
+              </Button>
+              <div className="h-4 w-px bg-border ml-2" />
+            </>
+          )}
+
           <Button
             variant="ghost"
             size="icon"
@@ -228,13 +254,22 @@ export default function StudentIdDialog({
   onOpenChange,
   trigger,
   defaultDesign = "classic",
+  onEdit,
+  preventOutsideClick = false,
 }: StudentIdDialogProps) {
   const [design, setDesign] = useState<StudentIdDesign>(defaultDesign);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent className="p-0 gap-0 overflow-hidden flex flex-col outline-none bg-background h-[100dvh] max-h-[100dvh] w-screen max-w-none sm:h-[90vh] sm:max-w-5xl sm:rounded-2xl sm:border sm:border-border sm:shadow-2xl">
+      <DialogContent 
+        onInteractOutside={(e) => {
+          if (preventOutsideClick) {
+            e.preventDefault();
+          }
+        }}
+        className="p-0 gap-0 overflow-hidden flex flex-col outline-none bg-background h-[100dvh] max-h-[100dvh] w-screen max-w-none sm:h-[90vh] sm:max-w-5xl sm:rounded-2xl sm:border sm:border-border sm:shadow-2xl"
+      >
         {/* We moved header logic inside Content for sticky behavior, so standard DialogHeader is removed or empty if needed for accessibility, but we have a visible header in content. */}
         <DialogTitle className="sr-only">Student ID Card Designer</DialogTitle>
         <DialogDescription className="sr-only">
@@ -247,6 +282,7 @@ export default function StudentIdDialog({
             design={design}
             setDesign={setDesign}
             onClose={() => onOpenChange?.(false)}
+            onEdit={onEdit}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full w-full bg-muted/30 p-8 text-center">

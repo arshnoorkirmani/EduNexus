@@ -43,8 +43,10 @@ export const DateInput = React.forwardRef<HTMLButtonElement, DateInputProps>(
     },
     ref
   ) => {
+    const [open, setOpen] = React.useState(false);
+
     return (
-      <Popover>
+      <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           {/* INPUT-LOOK BUTTON */}
           <button
@@ -98,7 +100,16 @@ export const DateInput = React.forwardRef<HTMLButtonElement, DateInputProps>(
           <Calendar
             mode="single"
             selected={value}
-            onSelect={onChange}
+            defaultMonth={value}
+            onSelect={(date) => {
+              if (!date) {
+                onChange?.(undefined);
+              } else {
+                // Ensure we pass a clean Date object (removes time component to avoid timezone shifts)
+                onChange?.(new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())));
+              }
+              setOpen(false); // Hide the calendar after selection
+            }}
             initialFocus
             captionLayout="dropdown"
           />

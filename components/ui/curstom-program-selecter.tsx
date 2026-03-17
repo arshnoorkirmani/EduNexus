@@ -48,6 +48,7 @@ interface SearchableSelectFieldProps<T extends FieldValues> {
   placeholder?: string;
   groups: SelectGroup[];
   loading?: boolean;
+  noOptionsMessage?: React.ReactNode | string;
   disabled?: boolean;
 }
 
@@ -62,6 +63,7 @@ export function SearchableSelectField<T extends FieldValues>({
   placeholder = "Select option",
   groups,
   loading,
+  noOptionsMessage = "No options found",
   disabled = false,
 }: SearchableSelectFieldProps<T>) {
   const [open, setOpen] = React.useState(false);
@@ -110,7 +112,7 @@ export function SearchableSelectField<T extends FieldValues>({
 
                     <CommandList>
                       {!loading && (
-                        <CommandEmpty>No options found.</CommandEmpty>
+                        <CommandEmpty>{noOptionsMessage}</CommandEmpty>
                       )}
                       {loading && (
                         <CommandEmpty className="flex items-center justify-center p-5 text-xs">

@@ -36,7 +36,12 @@ import { studentService } from "@/config/Student.service";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { fetchInstituteCourses } from "@/store/thunks/institute.thunks";
 import { promiseToast } from "../../utils/Toast";
-import PrintandImagePopup from "../../utils/printandImagePopup";
+import StudentIdDialog from "@/components/custom/id-card/StudentIdDialog";
+import { StudentIdData } from "@/components/custom/id-card/StudentIdCard";
+import { Button } from "@/components/ui/button";
+import { BookOpen, Plus } from "lucide-react";
+import Link from "next/link";
+
 const dobToPassword = (dob: string | Date) => {
   const date = new Date(dob);
   if (isNaN(date.getTime())) return "";
@@ -54,6 +59,9 @@ export default function AddStudentPage() {
   const [isRollNoLoading, setIsRollNoLoading] = useState(false);
   const [courses, setCourses] = useState<any[]>([]);
   const [courseLoading, setCourseLoading] = useState(true);
+  const [createdStudent, setCreatedStudent] = useState<StudentIdData | null>(
+    null
+  );
   const { form, formId, setIsLoading, isLoading } =
     useAppForm<StudentFormData>();
   const hasGeneratedRef = useRef(false);
@@ -160,7 +168,7 @@ export default function AddStudentPage() {
 
           return acc;
         }, []);
-
+        console.log("Courses => ", grouped);
         setCourses(grouped);
       })
       .catch((err) => {
@@ -176,7 +184,7 @@ export default function AddStudentPage() {
       });
   }, [institute.loading, institute.information.institute_code, dispatch]);
 
-  // Watch for Course Selection Changes
+  // Watch for Course Selection Changes and generate roll no
   const selectedCourseValue = useWatch({
     control: form.control,
     name: "academic.course.name",
@@ -328,7 +336,7 @@ export default function AddStudentPage() {
       { shouldDirty: false }
     );
   }, [totalFees, paidFees, form]);
-
+  // OnSubmit
   const onSubmit = async (data: StudentFormData) => {
     const documents = data.documents || [];
 
@@ -343,10 +351,64 @@ export default function AddStudentPage() {
     setIsLoading(true);
     console.log("Student Payload", payload);
     // Call service
-    const request = await studentService.createStudent(code, payload);
-    console.log("Student Request", request);
     try {
-      // Optional: Redirect or reset form here
+      const request = await studentService.createStudent(code, payload);
+      console.log("Student Request", request);
+
+      if (request) {
+        const student = request as any;
+        const currentYear = new Date(
+          student.academic.admissionDate.$date ?? student.academic.admissionDate
+        ).getFullYear();
+        const durationValue = Number(student.academic.course.duration.value);
+        const duration =
+          student.academic.course.duration.unit === "year"
+            ? currentYear + durationValue
+            : currentYear;
+
+        const dobString = student.personal.dob.$date ?? student.personal.dob;
+        const Dob = new Date(dobString).toLocaleDateString();
+        const validity = `${currentYear}-${duration}`;
+        const photoUrl =
+          student.documents.find((doc: any) => doc.type === "Profile Photo")
+            ?.file?.url || "";
+
+        const mappedStudent: StudentIdData = {
+          name: student.personal.fullName,
+          rollNO: student.academic.rollNo,
+          registrationNo: student.academic.registrationNo,
+          program: student.academic.course.name,
+          validity: validity,
+          studentId: student.auth.studentId,
+          dob: Dob,
+          contact: student.personal.mobile,
+          fatherName: student.personal.fatherName,
+          address: student.personal.address.fullAddress,
+          photoUrl: photoUrl,
+          institute: {
+            name: student.institute.instituteName,
+            institute_code: student.institute.instituteCode,
+            logoUrl: student.institute.instituteLogo || "",
+          },
+          verification: {
+            institute_code: student.institute.instituteCode,
+            studentId: student.auth?.studentId || "",
+          },
+        };
+
+        setCreatedStudent(mappedStudent);
+        promiseToast(Promise.resolve("Student created"), {
+          loading: "Creating student...",
+          success: "Student created successfully!",
+          error: "Failed to create student",
+        });
+      }
+    } catch (error) {
+      promiseToast(Promise.reject(error), {
+        loading: "Creating student...",
+        success: "",
+        error: "Failed to create student",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -568,6 +630,37 @@ export default function AddStudentPage() {
             placeholder="Select course"
             groups={courses}
             loading={courseLoading}
+            noOptionsMessage={
+              courses.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-6 text-center space-y-3">
+                  <div className="bg-primary/10 p-3 rounded-full">
+                    <BookOpen className="w-6 h-6 text-primary" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">No courses available</p>
+                    <p className="text-xs text-muted-foreground">
+                      Please add a course before proceeding.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    asChild
+                    className="mt-2 w-full gap-2 border-primary/20 hover:bg-primary/5 hover:text-primary transition-colors"
+                  >
+                    <Link href="/courses">
+                      <Plus className="w-4 h-4" />
+                      Add New Course
+                    </Link>
+                  </Button>
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground p-3 text-center">
+                  No courses found matching your search.
+                </div>
+              )
+            }
           />
 
           <Field
@@ -655,6 +748,14 @@ export default function AddStudentPage() {
           resetDescription="All unsaved changes will be lost."
         />
       </form>
+
+      <StudentIdDialog
+        open={!!createdStudent}
+        onOpenChange={(open) => !open && setCreatedStudent(null)}
+        student={createdStudent!}
+        defaultDesign="modern"
+        preventOutsideClick={true}
+      />
     </Form>
   );
 }
