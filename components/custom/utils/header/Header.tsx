@@ -210,7 +210,7 @@ export function LogoLink({ name, iconUrl }: { name: string; iconUrl: string }) {
     <Link
       href="/"
       className={cn(
-        "flex items-center justify-center gap-1 group transition-all duration-200  rounded-md"
+        "flex items-center justify-center gap-1 group transition-all duration-200 rounded-md hover:bg-transparent hover:shadow-none hover:border-transparent"
       )}
     >
       <Avatar className="">
@@ -219,7 +219,7 @@ export function LogoLink({ name, iconUrl }: { name: string; iconUrl: string }) {
           alt={`${name} Icon`}
           className="object-contain"
         />
-        <AvatarFallback className="text-xs font-bold bg-primary/10 text-primary">
+        <AvatarFallback className="text-xs font-bold text-primary">
           {name.charAt(0).toUpperCase()}
         </AvatarFallback>
       </Avatar>
