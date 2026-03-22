@@ -87,13 +87,13 @@ function HeroSection() {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 pt-2">
-              <Link href={AppData.routes.frontend.auth.register.institute} className="w-full sm:w-auto">
-                <Button size="lg" className="w-full sm:w-auto rounded-full px-8 shadow-md hover:shadow-lg transition-all duration-300">
+              <Link href={AppData.routes.frontend.auth.register.institute} className="w-full sm:w-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-full">
+                <Button size="lg" className="w-full sm:w-auto rounded-full px-8 shadow-md hover:shadow-lg transition-all duration-300 hover:brightness-110 active:scale-[0.98] active:shadow-sm cursor-pointer">
                   Create Institute Account
                 </Button>
               </Link>
-              <Link href={AppData.routes.frontend.auth.login.institute} className="w-full sm:w-auto">
-                <Button size="lg" variant="outline" className="w-full sm:w-auto rounded-full px-8 border-border/60 hover:bg-muted/50 shadow-sm hover:shadow-md transition-all duration-300">
+              <Link href={AppData.routes.frontend.auth.login.institute} className="w-full sm:w-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-full">
+                <Button size="lg" variant="outline" className="w-full sm:w-auto rounded-full px-8 border-border/60 hover:bg-muted/50 shadow-sm hover:shadow-md transition-all duration-300 hover:brightness-105 active:scale-[0.98] active:shadow-sm cursor-pointer">
                   Institute Login
                 </Button>
               </Link>
@@ -138,8 +138,8 @@ function HeroSection() {
               </div>
 
               <div className="mt-8">
-                <Link href={AppData.routes.frontend.auth.register.institute}>
-                  <Button variant="secondary" className="w-full rounded-xl shadow-md hover:shadow-lg hover:bg-primary hover:text-primary-foreground transition-all duration-300 group">
+                 <Link href={AppData.routes.frontend.auth.register.institute} className="block w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-xl">
+                  <Button variant="secondary" className="w-full rounded-xl shadow-md hover:shadow-lg hover:bg-primary hover:text-primary-foreground transition-all duration-300 group hover:brightness-110 active:scale-[0.98] active:shadow-sm cursor-pointer">
                     Start Setup <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>
@@ -370,8 +370,8 @@ function RoleLoginCard({ icon, title, desc, color, href }: { icon: React.ReactNo
         <h3 className="font-semibold text-lg text-foreground">{title}</h3>
         <p className="text-xs text-muted-foreground leading-relaxed px-2 pb-4">{desc}</p>
       </div>
-      <Link href={href} className="w-full mt-auto block">
-        <Button variant="outline" className="w-full bg-background border-border/60 hover:bg-muted transition-colors rounded-xl shadow-sm">
+      <Link href={href} className="w-full mt-auto block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-xl z-10 relative">
+        <Button variant="outline" className="w-full bg-background border-border/60 hover:bg-muted shadow-sm hover:shadow-md transition-all duration-300 rounded-xl hover:brightness-105 active:scale-[0.98] active:shadow-sm cursor-pointer">
           Login Portal
         </Button>
       </Link>
@@ -451,13 +451,13 @@ function CTASection() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
-            <Link href={AppData.routes.frontend.auth.register.institute}>
-              <Button size="lg" className="rounded-full px-10 h-14 text-base shadow-xl shadow-primary/20 hover:scale-105 transition-transform duration-300">
+            <Link href={AppData.routes.frontend.auth.register.institute} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-full">
+              <Button size="lg" className="rounded-full px-10 h-14 text-base shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all duration-300 hover:brightness-110 active:scale-[0.98] active:shadow-sm cursor-pointer">
                 Setup Institute Free
               </Button>
             </Link>
-            <Link href={AppData.routes.frontend.auth.login.institute}>
-              <Button size="lg" variant="outline" className="rounded-full px-10 h-14 text-base border-border/60 bg-background hover:bg-muted/50 transition-colors duration-300">
+            <Link href={AppData.routes.frontend.auth.login.institute} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-full">
+              <Button size="lg" variant="outline" className="rounded-full px-10 h-14 text-base border-border/60 bg-background hover:bg-muted/50 transition-colors duration-300 hover:brightness-105 active:scale-[0.98] active:shadow-sm cursor-pointer">
                 Existing Login
               </Button>
             </Link>
