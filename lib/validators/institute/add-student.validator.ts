@@ -5,17 +5,17 @@ import { z } from "zod";
 /* -------------------------------------------------------------------------- */
 
 const objectId = z
-  .string({ message: "ID is required" })
-  .min(1, { message: "Invalid ID" });
+  .string({ message: "A valid identification string is required." })
+  .min(1, { message: "Please provide a valid, non-empty identifier." });
 
 const phoneNumber = z
-  .string({ message: "Mobile number is required" })
-  .regex(/^(\+91[\-\s]?)?[6-9]\d{9}$/, { message: "Invalid mobile number" });
+  .string({ message: "A valid 10-digit mobile number is required." })
+  .regex(/^(\+91[\-\s]?)?[6-9]\d{9}$/, { message: "Please enter a correctly formatted 10-digit mobile number." });
 
 const timeHHMM = z
-  .string({ message: "Time is required" })
+  .string({ message: "Please specify a valid time." })
   .regex(/^([01]\d|2[0-3]):[0-5]\d$/, {
-    message: "Invalid time format (HH:mm)",
+    message: "Time must be provided in the standard 24-hour format (HH:mm).",
   });
 
 /* -------------------------------------------------------------------------- */
@@ -23,22 +23,22 @@ const timeHHMM = z
 /* -------------------------------------------------------------------------- */
 
 const GenderEnum = z.enum(["male", "female", "other"], {
-  message: "Invalid gender value",
+  message: "Please select a valid gender option from the provided list.",
 });
 
 const FeeStatusEnum = z.enum(["paid", "pending", "partial"], {
-  message: "Invalid fee status",
+  message: "Please select a formally recognized fee payment status.",
 });
 
 const DocumentStatusEnum = z.enum(["uploaded", "verified", "rejected"], {
-  message: "Invalid document status",
+  message: "The specified document status is not recognized by the system.",
 });
 
 /**
  * Using literal here is correct since role is fixed.
  * Message ensures clarity if payload is tampered with.
  */
-const UserRoleEnum = z.literal("student", { message: "Invalid user role" });
+const UserRoleEnum = z.literal("student", { message: "The assigned user role is invalid for this specific operation." });
 
 /* -------------------------------------------------------------------------- */
 /* Schema                                                                     */
@@ -50,11 +50,11 @@ export const studentFormSchema = z
 
     auth: z.object({
       studentId: z
-        .string({ message: "Student ID is required" })
-        .min(1, { message: "Student ID is required" }),
+        .string({ message: "A unique Student ID must be generated to proceed." })
+        .min(1, { message: "A unique Student ID is required." }),
       password: z
-        .string({ message: "Password is required" })
-        .min(6, { message: "Password must be at least 6 characters long" }),
+        .string({ message: "Please formulate a secure password for the student portal." })
+        .min(6, { message: "For security compliance, the password must contain at least 6 characters." }),
       role: UserRoleEnum,
 
       verify: z.object({
@@ -67,16 +67,16 @@ export const studentFormSchema = z
 
     institute: z.object({
       instituteCode: z
-        .string({ message: "Institute code is required" })
+        .string({ message: "The associated Institute Code cannot be omitted." })
         .trim()
-        .min(1, { message: "Institute code is required" }),
+        .min(1, { message: "An active Institute Code is unconditionally required." }),
       instituteLogo: z
         .string()
-        .url({ message: "Institute logo must be a valid URL" })
+        .url({ message: "The institute's logo must be submitted as a valid web address (URL)." })
         .optional(),
       instituteName: z
-        .string({ message: "Institute name is required" })
-        .min(1, { message: "Institute name is required" }),
+        .string({ message: "Please provide the officially registered name of the institute." })
+        .min(1, { message: "The registered institute name is required." }),
       address: z.string().optional(),
       ownerName: z.string().optional(),
     }),
@@ -85,28 +85,28 @@ export const studentFormSchema = z
 
     personal: z.object({
       firstName: z
-        .string({ message: "First name is required" })
-        .min(2, { message: "First name must be at least 2 characters" }),
+        .string({ message: "The student's first name is required for registration." })
+        .min(2, { message: "The first name must consist of at least 2 characters." }),
 
       lastName: z.string().optional(),
 
       fullName: z
-        .string({ message: "Full name is required" })
-        .min(1, { message: "Full name is required" }),
+        .string({ message: "The student's full aggregated name is required." })
+        .min(1, { message: "The student's full name is required." }),
 
       gender: GenderEnum,
 
       dob: z.preprocess((arg) => {
         if (typeof arg === "string" || arg instanceof Date) return new Date(arg);
       }, z.date({
-        message: "Date of birth must be a valid date",
+        message: "Please select a valid, recognized date of birth from the calendar.",
       })),
 
       mobile: phoneNumber,
 
       email: z
         .string()
-        .email({ message: "Email must be a valid email address" })
+        .email({ message: "Please enter a properly formatted academic or personal email address (e.g., student@example.com)." })
         .optional(),
 
       fatherName: z.string().optional(),
@@ -122,7 +122,7 @@ export const studentFormSchema = z
       }),
       photoUrl: z
         .string()
-        .url({ message: "Photo URL must be a valid URL" })
+        .url({ message: "The profile photograph must be supplied via a valid, accessible web link." })
         .optional(),
     }),
 
@@ -130,24 +130,24 @@ export const studentFormSchema = z
 
     academic: z.object({
       registrationNo: z
-        .string({ message: "Registration number is required" })
+        .string({ message: "An official Registration Number must be allocated to the student." })
         .min(1),
 
-      rollNo: z.string({ message: "Roll number is required" }).min(1),
+      rollNo: z.string({ message: "The designated Roll Number is required for academic tracking." }).min(1),
 
       timing: timeHHMM.optional(),
 
       admissionDate: z.preprocess((arg) => {
         if (typeof arg === "string" || arg instanceof Date) return new Date(arg);
       }, z.date({
-        message: "Admission date must be a valid date",
+        message: "Please specify a valid official admission induction date.",
       })),
 
       course: z
         .object({
           name: z
-            .string({ message: "Course name is required" })
-            .min(1, "Course is required"),
+            .string({ message: "Please select a valid academic course from the registered curriculum." })
+            .min(1, "An academic course assignment is required."),
 
           groupTitle: z.string().optional(),
           course_code: z.string().optional(),
@@ -156,8 +156,8 @@ export const studentFormSchema = z
             value: z.number(),
           }),
           baseFee: z
-            .number({ message: "Base fee must be a number" })
-            .nonnegative({ message: "Base fee cannot be negative" })
+            .number({ message: "The course's base fee must be entered as a numeric value." })
+            .nonnegative({ message: "The course's base fee cannot mathematically be a negative amount." })
             .optional(),
         })
         .optional(),
@@ -198,16 +198,16 @@ export const studentFormSchema = z
 
     fees: z.object({
       totalFees: z.coerce
-        .number({ message: "Total fees must be a number" })
-        .nonnegative({ message: "Total fees cannot be negative" }),
+        .number({ message: "The total fee aggregate must be a valid numeric amount." })
+        .nonnegative({ message: "Total fees assigned cannot be a negative amount." }),
 
       paidFees: z.coerce
-        .number({ message: "Paid fees must be a number" })
-        .nonnegative({ message: "Paid fees cannot be negative" }),
+        .number({ message: "The currently paid fee balance must be a valid numeric value." })
+        .nonnegative({ message: "Processed fee payments cannot be recorded as a negative value." }),
 
       remainingFees: z.coerce
-        .number({ message: "Remaining fees must be a number" })
-        .nonnegative({ message: "Remaining fees cannot be negative" }),
+        .number({ message: "The remaining fee deficit must be a numeric value." })
+        .nonnegative({ message: "The remaining fees cannot be negative. Please verify your total and paid input amounts." }),
 
       status: FeeStatusEnum,
     }),
@@ -216,28 +216,28 @@ export const studentFormSchema = z
 
     documents: z.array(
       z.object({
-        type: z.string({ message: "Document type is required" }).min(1),
+        type: z.string({ message: "Please specify the exact classification type of the document being uploaded." }).min(1),
 
         file: z.object({
-          name: z.string({ message: "File name is required" }),
+          name: z.string({ message: "The uploaded file must bear a valid, recognized document name." }),
           url: z
-            .string({ message: "File URL is required" })
-            .url({ message: "File URL must be valid" }),
+            .string({ message: "The document's file URL linkage is missing." })
+            .url({ message: "The document must contain a valid, accessible secure download link." }),
           mimeType: z.string(),
           size: z
-            .number({ message: "File size must be a number" })
+            .number({ message: "The document's file size metric must be rendered as a number." })
             .nonnegative(),
         }),
 
         uploadedAt: z.coerce.date({
-          message: "Uploaded date must be valid",
+          message: "The scheduled document verification and upload date is not correctly recognized.",
         }),
 
         uploadedBy: z.object({
-          name: z.string({ message: "Uploader name is required" }),
+          name: z.string({ message: "The authorizing administrator's name managing this upload is missing." }),
           email: z
-            .string({ message: "Uploader email is required" })
-            .email({ message: "Uploader email must be valid" }),
+            .string({ message: "The authorizing administrator's email is strictly required." })
+            .email({ message: "The administrator's email associated with this secure upload is invalid." }),
         }),
 
         verified: z
@@ -267,7 +267,7 @@ export const studentFormSchema = z
         .join(" "),
     {
       path: ["personal", "fullName"],
-      message: "Full name must match first and last name",
+      message: "The auto-calculated full name does not correspond accurately with the provided first and last name fields.",
     }
   )
 
@@ -276,7 +276,7 @@ export const studentFormSchema = z
       data.fees.remainingFees === data.fees.totalFees - data.fees.paidFees,
     {
       path: ["fees", "remainingFees"],
-      message: "Remaining fees must equal total fees minus paid fees",
+      message: "The remaining fees amount violates validation. It must mathematically match the total fees minus the paid fees.",
     }
   );
 

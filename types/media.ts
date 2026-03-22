@@ -58,6 +58,8 @@ export interface IMedia {
   visibility: MediaVisibility;
   status: MediaStatus;
   uploadedBy?: {
+    institute_name?: string;
+    institute_code?: string;
     name: string;
     email: string;
   };
@@ -94,6 +96,7 @@ export interface CreateMediaPayload {
   status?: MediaStatus | "temporary" | "uploaded";
   uploadedBy?: {
     institute_name: string;
+    institute_code?: string;
     name: string;
     email: string;
   };

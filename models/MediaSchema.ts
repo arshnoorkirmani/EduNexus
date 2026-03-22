@@ -110,6 +110,7 @@ const MediaSchema = new Schema(
 
     uploadedBy: {
       institute_name: { type: String },
+      institute_code: { type: String },
       name: { type: String },
       email: { type: String },
     },

@@ -101,7 +101,7 @@ function StudentIdContent({
   onEdit,
 }: StudentIdContentProps & { onEdit?: () => void }) {
   return (
-    <div className="flex flex-col h-full w-full bg-muted/30 overflow-hidden">
+    <div className="flex flex-col w-full bg-muted/30 overflow-hidden sm:rounded-2xl">
       {/* 1. Sticky Top Action Bar */}
       <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border px-4 sm:px-6 py-3 flex items-center justify-between shrink-0 h-[68px]">
         {/* Left: Identity */}
@@ -120,8 +120,8 @@ function StudentIdContent({
         </div>
 
         {/* Right: Controls */}
-        <div className="flex items-center gap-2 sm:gap-4">
-          {/* Layout Selector - Single Responsive Popover Trigger */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Layout Selector */}
           <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -164,9 +164,31 @@ function StudentIdContent({
             </PopoverContent>
           </Popover>
 
-          <div className="h-4 w-px bg-border" />
+          <div className="hidden sm:block h-4 w-px bg-border sm:mx-1" />
 
           {/* Actions */}
+          {onEdit && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onEdit}
+                className="h-9 px-3 rounded-lg font-medium text-xs hidden sm:inline-flex shadow-sm bg-background/50 hover:bg-background"
+              >
+                <EditIcon className="w-4 h-4 mr-2" />
+                Edit
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={onEdit}
+                className="h-9 w-9 rounded-lg sm:hidden shadow-sm bg-background/50"
+              >
+                <EditIcon className="w-4 h-4" />
+              </Button>
+            </>
+          )}
+
           <PrintButton
             id={`${design}-student-id-card`}
             label="Print"
@@ -192,30 +214,7 @@ function StudentIdContent({
             buttonClassName="bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 rounded-lg text-xs font-bold uppercase tracking-wide shadow-sm hover:shadow-md transition-all"
           />
 
-          <div className="h-4 w-px bg-border ml-2" />
-
-          {onEdit && (
-            <>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onEdit}
-                className="text-muted-foreground hover:text-foreground h-9 px-3 rounded-lg font-medium text-xs hidden sm:inline-flex"
-              >
-                <EditIcon className="w-4 h-4 mr-2" />
-                Edit
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onEdit}
-                className="text-muted-foreground hover:text-foreground h-9 w-9 rounded-lg sm:hidden"
-              >
-                <EditIcon className="w-4 h-4" />
-              </Button>
-              <div className="h-4 w-px bg-border ml-2" />
-            </>
-          )}
+          <div className="hidden sm:block h-4 w-px bg-border mx-1 sm:mx-2" />
 
           <Button
             variant="ghost"
@@ -229,7 +228,7 @@ function StudentIdContent({
       </div>
 
       {/* 2. Main Stage: Responsive Preview */}
-      <div className="flex-1 flex items-center justify-center relative bg-muted/20 overflow-hidden p-4 sm:p-8 lg:p-12 text-muted-foreground/20">
+      <div className="flex items-center justify-center relative bg-muted/20 overflow-hidden p-6 sm:p-12 lg:p-16 text-muted-foreground/20 min-h-[400px] sm:min-h-[500px]">
         {/* Background Pattern */}
         <div className="absolute inset-0 bg-[radial-gradient(currentColor_1px,transparent_1px)] bg-size-[24px_24px] pointer-events-none" />
 
@@ -260,15 +259,15 @@ export default function StudentIdDialog({
   const [design, setDesign] = useState<StudentIdDesign>(defaultDesign);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange} >
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent 
+      <DialogContent
         onInteractOutside={(e) => {
           if (preventOutsideClick) {
             e.preventDefault();
           }
         }}
-        className="p-0 gap-0 overflow-hidden flex flex-col outline-none bg-background h-[100dvh] max-h-[100dvh] w-screen max-w-none sm:h-[90vh] sm:max-w-5xl sm:rounded-2xl sm:border sm:border-border sm:shadow-2xl"
+        className="p-0 gap-0 overflow-hidden flex flex-col outline-none bg-background max-h-[100dvh] w-full sm:w-[90vw] sm:max-w-3xl lg:max-w-4xl sm:h-auto sm:rounded-2xl sm:border sm:border-border sm:shadow-2xl md:left-[calc(50%+130px)] lg:left-[calc(50%+140px)]"
       >
         {/* We moved header logic inside Content for sticky behavior, so standard DialogHeader is removed or empty if needed for accessibility, but we have a visible header in content. */}
         <DialogTitle className="sr-only">Student ID Card Designer</DialogTitle>

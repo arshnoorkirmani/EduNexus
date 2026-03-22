@@ -231,74 +231,65 @@ export default function AddStudentPage() {
   useEffect(() => {
     form.setValue("personal.fullName", fullName, { shouldDirty: false });
   }, [fullName, form]);
-  //Auto Generate Student ID and Registration No
+  // Reusable function to fetch and populate standard auto-generated values
+  const generateDefaults = async () => {
+    if (!user?.institute_code) return;
+    try {
+      setIsStudentIdLoading(true);
+      setIsRegistrationNoLoading(true);
+      const [studentId, registrationNo] = await Promise.all([
+        studentService.generateStudentId(user.institute_code).finally(() => {
+          setIsStudentIdLoading(false);
+        }),
+        studentService
+          .generateRegistrationNo(user.institute_code)
+          .finally(() => {
+            setIsRegistrationNoLoading(false);
+          }),
+      ]);
+      console.log("Newly Generated studentId", studentId);
+      console.log("Newly Generated registrationNo", registrationNo);
+
+      if (studentId) {
+        form.setValue("auth.studentId", studentId, { shouldDirty: false });
+      }
+
+      if (registrationNo) {
+        form.setValue("academic.registrationNo", registrationNo, {
+          shouldDirty: false,
+        });
+      }
+
+      form.setValue(
+        "institute.instituteCode",
+        institute?.information?.institute_code ?? "",
+        { shouldDirty: false }
+      );
+      form.setValue(
+        "institute.instituteName",
+        institute?.information?.institute_name || institute?.username || "",
+        { shouldDirty: false }
+      );
+      form.setValue(
+        "institute.address",
+        institute?.information?.address ?? "",
+        { shouldDirty: false }
+      );
+    } catch (error) {
+      console.error("Auto-generate failed:", error);
+    }
+  };
+
+  //Auto Generate Student ID and Registration No on Mount
   useEffect(() => {
     if (institute.loading) return;
-
     if (!user?.institute_code) return;
     if (hasGeneratedRef.current) return;
 
-    const generate = async () => {
-      try {
-        setIsStudentIdLoading(true);
-        setIsRegistrationNoLoading(true);
-        const [studentId, registrationNo] = await Promise.all([
-          studentService.generateStudentId(user.institute_code).finally(() => {
-            setIsStudentIdLoading(false);
-          }),
-          studentService
-            .generateRegistrationNo(user.institute_code)
-            .finally(() => {
-              setIsRegistrationNoLoading(false);
-            }),
-        ]);
-        console.log("studentId", studentId);
-        console.log("registrationNo", registrationNo);
-        if (studentId) {
-          console.log("studentId", studentId);
-          form.setValue("auth.studentId", studentId, { shouldDirty: false });
-        }
-
-        if (registrationNo) {
-          console.log("registrationNo", registrationNo);
-          form.setValue("academic.registrationNo", registrationNo, {
-            shouldDirty: false,
-          });
-        }
-
-        form.setValue(
-          "institute.instituteCode",
-          institute?.information?.institute_code ?? "",
-          {
-            shouldDirty: false,
-          }
-        );
-        form.setValue("institute.instituteName", institute?.username ?? "", {
-          shouldDirty: false,
-        });
-        form.setValue(
-          "institute.address",
-          institute?.information.address ?? "",
-          {
-            shouldDirty: false,
-          }
-        );
-        form.setValue(
-          "institute.instituteName",
-          institute?.information.institute_name ?? "",
-          {
-            shouldDirty: false,
-          }
-        );
-
-        hasGeneratedRef.current = true;
-      } catch (error) {
-        console.error("Auto-generate failed:", error);
-      }
-    };
-
-    generate();
-  }, [institute.loading]);
+    generateDefaults().then(() => {
+      hasGeneratedRef.current = true;
+    });
+  }, [institute.loading, user?.institute_code]);
   // Full Address
   useEffect(() => {
     const fullAddress = [
@@ -649,7 +640,7 @@ export default function AddStudentPage() {
                     asChild
                     className="mt-2 w-full gap-2 border-primary/20 hover:bg-primary/5 hover:text-primary transition-colors"
                   >
-                    <Link href="/courses">
+                    <Link href="courses">
                       <Plus className="w-4 h-4" />
                       Add New Course
                     </Link>
@@ -751,7 +742,17 @@ export default function AddStudentPage() {
 
       <StudentIdDialog
         open={!!createdStudent}
-        onOpenChange={(open) => !open && setCreatedStudent(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setCreatedStudent(null);
+            form.reset();
+            // Securely regenerate sequence IDs strictly after reset!
+            setTimeout(() => {
+              generateDefaults();
+            }, 0);
+          }
+        }}
+        onEdit={() => setCreatedStudent(null)}
         student={createdStudent!}
         defaultDesign="modern"
         preventOutsideClick={true}

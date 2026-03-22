@@ -174,15 +174,18 @@ export async function DELETE(req: Request) {
 
   try {
     // 1️⃣ Delete from ImageKit
-    await imagekit.deleteFile(media.providerFileId);
+    try {
+      await imagekit.deleteFile(media.providerFileId);
+    } catch (ikError: any) {
+      console.warn("Notice: ImageKit file deletion failed. Continuing with DB delete anyway.", ikError.message || ikError);
+    }
 
-    // 2️⃣ Soft delete in DB
-    media.status = "deleted";
-    media.deletedAt = new Date();
-    await media.save();
+    // 2️⃣ Hard delete from DB
+    await Media.deleteOne({ _id: media._id });
 
     return Response.json({ success: true });
   } catch (error: any) {
-    return Response.json({ error: "Failed to delete media" }, { status: 500 });
+    console.error("Critical Database Delete Error:", error.message || error);
+    return Response.json({ error: "Failed to delete media from database: " + error.message }, { status: 500 });
   }
 }

@@ -5,6 +5,8 @@ import { AppData } from "./appConfig";
 import { Student } from "@/types/models/student.model";
 import { StudentFormData } from "@/lib/validators/institute/add-student.validator";
 import { errorToast, promiseToast } from "@/components/custom/utils/Toast";
+import mediaService from "@/config/MediaConfig";
+import { MediaStatus } from "@/types/media";
 
 type GenerateResult<T extends string> = {
   success: boolean;
@@ -132,6 +134,28 @@ export class StudentService {
       const response = await request;
 
       console.log("Student ServiceResponse", response);
+
+      // --- Sync Media Status to "UPLOADED" ---
+      if (response && response.data && incomingPayload.auth?.studentId && incomingPayload.documents?.length) {
+        try {
+          const submittedUrls = incomingPayload.documents.map((d: any) => d.file.url);
+          
+          await mediaService.syncMediaStatusByUrls(
+            { 
+              entity: "student", 
+              entityId: incomingPayload.auth.studentId, 
+              field: "documents" 
+            },
+            submittedUrls,
+            MediaStatus.UPLOADED
+          );
+        } catch (mediaError) {
+          console.error("Failed to update student document media statuses:", mediaError);
+          // 🔴 Crucial: We don't throw here to avoid failing the already-successful student creation response
+        }
+      }
+      // ---------------------------------------
+
       return response.data;
     } catch (error: any) {
       console.log("Error creating student", error);

@@ -96,6 +96,40 @@ class MediaService {
   async getByFileId(providerFileId: string) {
     return apiClient.get(`${this.base}/${providerFileId}`);
   }
+
+  /**
+   * Sync the status of media documents for a specific owner by their URLs.
+   * Useful to finalize uploads (e.g. marking them as 'uploaded').
+   *
+   * @param owner - The owner details.
+   * @param urls - Array of URLs that were successfully submitted and should be updated.
+   * @param targetStatus - The status to apply (default: 'uploaded').
+   */
+  async syncMediaStatusByUrls(
+    owner: MediaOwner,
+    urls: string[],
+    targetStatus: MediaStatus = MediaStatus.UPLOADED
+  ) {
+    try {
+      const response: any = await this.getByOwner(owner);
+      const mediaRecords = Array.isArray(response) ? response : response?.data || [];
+      if (!mediaRecords.length) return;
+
+      await Promise.all(
+        mediaRecords.map(async (media: any) => {
+          if (urls.includes(media.url) && media.status !== targetStatus) {
+            await this.update({
+              providerFileId: media.providerFileId,
+              status: targetStatus,
+            });
+          }
+        })
+      );
+    } catch (error) {
+      console.error("Error syncing media status by URLs:", error);
+      throw error;
+    }
+  }
 }
 
 /* -------------------------------------------------------------------------- */

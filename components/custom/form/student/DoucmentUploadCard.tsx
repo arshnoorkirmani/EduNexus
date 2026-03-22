@@ -131,7 +131,23 @@ export function DocumentUploadCard<
       console.log("Document Upload", label);
 
       try {
-        const result = await startUpload(file, label, folderPath);
+        const result = await startUpload(file, label, folderPath, {
+          user: {
+            institute_name: user?.institute_name,
+            institute_code: user?.institute_code,
+            name: user?.name || "Unknown",
+            email: user?.identifier || "Unknown",
+          },
+          mediaPayload: {
+            owner: {
+              entity: OwnerEntity.STUDENT,
+              entityId: studentId ?? "draft",
+              field: "documents",
+            },
+            status: MediaStatus.TEMPORARY,
+            visibility: MediaVisibility.PUBLIC,
+          },
+        });
         console.log("Document Upload Result", result);
         if (!result) {
           errorToast(`Failed to upload ${docType}`);
@@ -164,33 +180,6 @@ export function DocumentUploadCard<
           shouldTouch: true,
         });
 
-        /* ----------------------- Save to Media (Cron) ------------------------- */
-        await mediaService.create({
-          provider: MediaProvider.IMAGEKIT,
-          providerFileId: result.fileId,
-          name: result.name,
-          url: result.url,
-          thumbnailUrl: result.thumbnailUrl,
-          mimeType: file.type,
-          size: result.size,
-          type: file.type.startsWith("image/")
-            ? MediaType.IMAGE
-            : file.type === "application/pdf"
-            ? MediaType.PDF
-            : MediaType.OTHER,
-          owner: {
-            entity: OwnerEntity.STUDENT,
-            entityId: studentId ?? "draft",
-            field: "documents",
-          },
-          status: MediaStatus.TEMPORARY,
-          visibility: MediaVisibility.PUBLIC,
-          uploadedBy: {
-            institute_name: user?.institute_name || "Unknown",
-            name: user?.name || "Unknown",
-            email: user?.identifier || "Unknown",
-          },
-        });
       } catch (error) {
         console.error("Upload error:", error);
         errorToast(`Error uploading ${file.name}`);
