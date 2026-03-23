@@ -119,12 +119,6 @@
   body {
     @apply bg-background text-foreground;
   }
-  a {
-    @apply cursor-pointer transition-[transform,shadow,border-color] duration-300 hover:scale-[1.02] hover:shadow-md hover:border-primary/30 active:scale-[0.98] active:shadow-sm;
-  }
-  button:disabled, input:disabled, textarea:disabled, select:disabled, [disabled] {
-    @apply cursor-not-allowed pointer-events-none opacity-50;
-  }
 }
 html,
 *::-webkit-scrollbar {
